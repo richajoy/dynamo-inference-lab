@@ -26,6 +26,12 @@ quantities in that step:
 
 ![Engine knobs: chunk budget (prompt tokens per step), max-num-seqs (requests per step), FP8 weights and KV (bytes per step) and speculative decoding (tokens per step) all shape one engine step, which determines TTFT, TPOT and throughput](../figures/diagrams/engine-knobs.svg)
 
+**Purpose.** Maps each knob tested here to the quantity it changes in an engine step. Blue: scheduling limits. Purple:
+bytes per value. Green: speculative decoding. **What it implies.** No knob acts on a metric directly. Each changes how
+much work or how many bytes go into a step, and TTFT, TPOT and throughput follow from that. This is why one knob can
+improve one metric and worsen another: a smaller chunk budget shortens the longest step (better TPOT under
+prompt-heavy load) and delays prompts (worse TTFT at saturation).
+
 ## Setup
 
 | Item | Value |

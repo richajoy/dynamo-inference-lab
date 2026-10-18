@@ -36,6 +36,12 @@ flush does not get the worker restarted.
 
 ![Capture sequence: the node shell starts an nsys capture on the worker pod; for each of the prefill, decode and mixed windows the AIPerf pod sends an unrecorded warm-up burst, calls start_profile, sends the recorded burst and calls stop_profile; nsys stop then writes one report per window](../figures/diagrams/nsys-capture.svg)
 
+**Purpose.** How three trace windows were recorded from one running worker. The worker starts once under an idle
+Nsight session, and each window is opened and closed through Dynamo's profiling endpoints (blue band: repeated per
+window). **What it implies.** The server is never restarted, so every trace comes from one warmed-up engine with the
+same flags as the exercise 2 baseline, and only the requests inside a window are recorded. Short windows keep the
+overhead of tracing every kernel inside CUDA graphs bounded.
+
 | Window | Input / output | Concurrency | Why this shape |
 |---|---|---|---|
 | prefill | 3,000 / 32 | 4 | Mostly prompt processing |

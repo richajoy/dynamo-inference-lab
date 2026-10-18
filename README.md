@@ -71,11 +71,14 @@ baseline; the exercise links give the conditions.
 
 ![The stack: the client sends requests to the Dynamo frontend (HTTP, tokenize, KV-aware router), which routes to a vLLM prefill or aggregated worker and a vLLM decode worker; the KV cache moves between workers via NIXL / UCX over NVLink or TCP; the Dynamo planner sets replica counts and the Dynamo operator creates the worker pods from the DynamoGraphDeployment](figures/diagrams/stack-overview.svg)
 
-**Reading the diagram.** Blue arrows are the request path: the Dynamo frontend tokenizes the prompt, picks a worker
-and runs the request. The purple dotted arrow is the KV cache moving from the prefill GPU to the decode GPU, which
-happens only when serving is disaggregated; an aggregated worker does both phases itself. Grey arrows are the control
-plane: the planner decides replica counts and the operator turns them into pods.
-[Exercise 4](docs/04-pd-disaggregation.md) animates one request through both modes.
+**Purpose.** Shows which component handles a request and which one changes the deployment. Blue arrows are the request
+path: the Dynamo frontend tokenizes the prompt, picks a worker and runs the request. The purple dotted arrow is the KV
+cache moving from the prefill GPU to the decode GPU, which happens only when serving is disaggregated; an aggregated
+worker does both phases itself. Grey arrows are the control plane: the planner decides replica counts and the operator
+turns them into pods. **What it implies.** Every knob in this project belongs to one box: routing settings to the
+frontend, engine flags to the vLLM workers, pool sizes to the planner, and the KV transport to which GPUs each worker
+pod can see. Knowing the box tells you which process reads a setting and which metric it can move. [Exercise
+4](docs/04-pd-disaggregation.md) animates one request through both modes.
 
 | Layer | Component | Version |
 |---|---|---|
