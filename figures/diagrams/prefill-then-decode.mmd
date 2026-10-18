@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant C as Client
+    participant G as GPU (vLLM engine)
+    rect rgba(224, 123, 0, 0.14)
+    C->>G: prompt (3,000 tokens)
+    Note over G: PREFILL: all 3,000 tokens in one pass<br/>weights reused 3,000 times: compute-bound<br/>writes K and V for every token
+    G-->>C: token 1 (TTFT)
+    end
+    rect rgba(76, 140, 0, 0.14)
+    loop DECODE: one step per output token
+        Note over G: read ALL weights + the KV cache<br/>to make ONE token per request: memory-bound
+        G-->>C: token n (gap = TPOT)
+    end
+    end

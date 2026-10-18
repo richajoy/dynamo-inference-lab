@@ -34,24 +34,7 @@ flush does not get the worker restarted.
 
 ### Capturing windows without restarting the worker
 
-```mermaid
-sequenceDiagram
-    participant N as node shell (profile/nsys-capture.sh)
-    participant W as worker pod (nsys session "vllm")
-    participant A as AIPerf pod
-    autonumber
-    N->>W: nsys start -c cudaProfilerApi --capture-range-end=repeat
-    rect rgba(31, 111, 235, 0.10)
-    loop prefill, decode, mixed windows
-        N->>A: warm-up burst (not recorded)
-        A->>W: POST /engine/control/start_profile
-        Note over W: cudaProfilerStart: a range opens,<br/>vLLM wraps every step in an NVTX range
-        N->>A: recorded burst (8 / 16 / 24 requests)
-        A->>W: POST /engine/control/stop_profile
-    end
-    end
-    N->>W: nsys stop: one report per window
-```
+![Capture sequence: the node shell starts an nsys capture on the worker pod; for each of the prefill, decode and mixed windows the AIPerf pod sends an unrecorded warm-up burst, calls start_profile, sends the recorded burst and calls stop_profile; nsys stop then writes one report per window](../figures/diagrams/nsys-capture.svg)
 
 | Window | Input / output | Concurrency | Why this shape |
 |---|---|---|---|

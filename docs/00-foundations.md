@@ -34,22 +34,7 @@ prompt token in every layer, which later tokens attend to.
 every weight of the model, plus the KV cache of the request. With one request, each weight byte read from memory is
 used for one multiply-add. The GPU's arithmetic units mostly wait for memory.
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant G as GPU (vLLM engine)
-    rect rgba(224, 123, 0, 0.14)
-    C->>G: prompt (3,000 tokens)
-    Note over G: PREFILL: all 3,000 tokens in one pass<br/>weights reused 3,000 times: compute-bound<br/>writes K and V for every token
-    G-->>C: token 1 (TTFT)
-    end
-    rect rgba(76, 140, 0, 0.14)
-    loop DECODE: one step per output token
-        Note over G: read ALL weights + the KV cache<br/>to make ONE token per request: memory-bound
-        G-->>C: token n (gap = TPOT)
-    end
-    end
-```
+![Sequence: the client sends a 3,000-token prompt; the GPU runs prefill over all tokens in one compute-bound pass and returns token 1 (TTFT); then a decode loop reads all weights plus the KV cache to make one token per request per step (memory-bound), each gap being TPOT](../figures/diagrams/prefill-then-decode.svg)
 
 The engine (vLLM) runs **continuous batching**: every step is one forward pass that carries one new token for every
 running request, plus, if the per-step token budget allows, a chunk of a waiting prompt. That last part matters a

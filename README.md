@@ -69,27 +69,7 @@ baseline; the exercise links give the conditions.
 
 ## The stack, and who manages what
 
-```mermaid
-flowchart LR
-    C[Client / AIPerf] --> F[Dynamo frontend<br/>HTTP, tokenize, KV-aware router]
-    F --> P[vLLM prefill or aggregated worker<br/>one GPU or MIG slice]
-    F --> D[vLLM decode worker]
-    P -.->|KV cache via NIXL / UCX, NVLink or TCP| D
-    PL[Dynamo planner] -->|replica counts| OP[Dynamo operator]
-    OP -->|creates pods from the DynamoGraphDeployment| P
-    OP --> D
-    classDef client fill:#eef1f4,stroke:#57606a,color:#1f2328,stroke-width:1.5px
-    classDef dynamo fill:#dbeafe,stroke:#1f6feb,color:#0b1f44,stroke-width:1.5px
-    classDef gpu fill:#e8f5d0,stroke:#4c8c00,color:#1d3300,stroke-width:1.5px
-    classDef kv fill:#efe4ff,stroke:#8250df,color:#2d0f5c,stroke-width:1.5px
-    classDef platform fill:#e6edf3,stroke:#6e7781,color:#1f2328,stroke-width:1.5px
-    classDef obs fill:#fff4d6,stroke:#bf8700,color:#3d2a00,stroke-width:1.5px
-    class C client
-    class F,PL,OP dynamo
-    class P,D gpu
-    linkStyle 3 stroke:#8250df,stroke-width:2.5px
-    linkStyle 0,1,2 stroke:#1f6feb,stroke-width:2px
-```
+![The stack: the client sends requests to the Dynamo frontend (HTTP, tokenize, KV-aware router), which routes to a vLLM prefill or aggregated worker and a vLLM decode worker; the KV cache moves between workers via NIXL / UCX over NVLink or TCP; the Dynamo planner sets replica counts and the Dynamo operator creates the worker pods from the DynamoGraphDeployment](figures/diagrams/stack-overview.svg)
 
 ![Animated diagram: in aggregated serving the prompt goes from the client through the Dynamo frontend to one GPU, which prefills and then streams tokens back; in disaggregated serving the prompt goes to a prefill GPU, the KV cache moves to a decode GPU over NIXL, and the decode GPU streams the tokens](figures/anim-request-path.svg)
 
@@ -142,6 +122,7 @@ Each exercise ends with the commands for its experiments. To rebuild every chart
 pip install matplotlib numpy
 python3 figures/make_figures.py     # data charts and tables
 python3 figures/make_diagrams.py    # animated explanatory diagrams (no dependencies)
+./figures/render_diagrams.sh       # architecture diagrams: figures/diagrams/*.mmd to SVG (Node.js, runs mermaid-cli)
 ```
 
 ## Repository layout
@@ -156,7 +137,7 @@ python3 figures/make_diagrams.py    # animated explanatory diagrams (no dependen
 | `profile/` | Nsight Systems capture, summary and timeline scripts |
 | `results/` | AIPerf exports and GPU telemetry for every run (host and time identifiers removed) |
 | `evidence/` | Grafana screenshots, Nsight timelines, worker and planner logs, terminal recordings (`asciinema play <file>`) |
-| `figures/` | `make_figures.py` (data charts and tables) and `make_diagrams.py` (animated diagrams), with their outputs |
+| `figures/` | `make_figures.py` (data charts and tables), `make_diagrams.py` (animated diagrams) and `diagrams/` (Mermaid sources of the architecture diagrams, rendered to SVG by `render_diagrams.sh`), with their outputs |
 
 ## Limitations
 

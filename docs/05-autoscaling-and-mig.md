@@ -32,23 +32,7 @@ performance profiling and uses thresholds:
   as one GPU). The band's lower edge is the minimum minus one replica's GPUs, so 3 or 4 slices are legal: the planner
   could re-split the slices and briefly run on 3, but never use more than 4.
 
-```mermaid
-flowchart LR
-    W[vLLM workers<br/>forward-pass metrics] -->|queued prefill tokens<br/>decode KV utilization| PL[Planner<br/>every 10 s]
-    PL -->|clamp to the GPU budget| PL
-    PL -->|patch replica counts| DGD[DynamoGraphDeployment]
-    DGD -->|Dynamo operator| K8s[delete a pod in one pool<br/>create a pod in the other]
-    K8s -->|freed MIG slice bound to the new pod<br/>cold start| W
-    classDef client fill:#eef1f4,stroke:#57606a,color:#1f2328,stroke-width:1.5px
-    classDef dynamo fill:#dbeafe,stroke:#1f6feb,color:#0b1f44,stroke-width:1.5px
-    classDef gpu fill:#e8f5d0,stroke:#4c8c00,color:#1d3300,stroke-width:1.5px
-    classDef kv fill:#efe4ff,stroke:#8250df,color:#2d0f5c,stroke-width:1.5px
-    classDef platform fill:#e6edf3,stroke:#6e7781,color:#1f2328,stroke-width:1.5px
-    classDef obs fill:#fff4d6,stroke:#bf8700,color:#3d2a00,stroke-width:1.5px
-    class W gpu
-    class PL,DGD dynamo
-    class K8s platform
-```
+![The planner loop: vLLM workers report queued prefill tokens and decode KV utilization; the planner, every 10 s, clamps to the GPU budget and patches replica counts in the DynamoGraphDeployment; the Dynamo operator deletes a pod in one pool and creates one in the other, and the freed MIG slice is bound to the new pod after a cold start](../figures/diagrams/planner-loop.svg)
 
 ## Setup
 

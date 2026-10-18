@@ -14,56 +14,7 @@ stack and harness, changing one thing at a time.
 
 ## 1. The stack, bottom to top
 
-```mermaid
-flowchart TB
-    subgraph host["GPU node: host OS"]
-        drv["NVIDIA driver 580 + container toolkit<br/>(preinstalled in the host image)"]
-        k3s["k3s 1.34 (single-node Kubernetes)<br/>containerd with the nvidia runtime"]
-    end
-    subgraph gpuop["namespace gpu-operator: NVIDIA GPU Operator v26.7.1"]
-        dp["device plugin: advertises nvidia.com/gpu<br/>or nvidia.com/mig-3g.40gb"]
-        mig["MIG manager"]
-        dcgm["DCGM exporter: GPU telemetry, 1 s"]
-    end
-    subgraph mon["namespace monitoring: kube-prometheus-stack"]
-        prom["Prometheus (5 s scrape)"] --> graf["Grafana + Dynamo dashboards"]
-    end
-    subgraph dyn["namespace dynamo-system: Dynamo platform 1.5.1"]
-        op["Dynamo operator + CRDs"]
-        kai["KAI scheduler"]
-        grove["Grove"]
-        dgd["DynamoGraphDeployment (your workload)"]
-        fe["Frontend pod: HTTP, tokenize, route"]
-        wk["vLLM worker pod(s): one GPU or slice each"]
-        ap["AIPerf pod: load generator"]
-    end
-    drv --> k3s --> gpuop
-    dcgm --> prom
-    op -->|watches| dgd
-    dgd -->|operator creates| fe
-    dgd -->|operator creates| wk
-    kai -->|places GPU pods| wk
-    prom -->|scrapes| fe
-    prom -->|scrapes| wk
-    ap -->|HTTP load| fe --> wk
-    classDef client fill:#eef1f4,stroke:#57606a,color:#1f2328,stroke-width:1.5px
-    classDef dynamo fill:#dbeafe,stroke:#1f6feb,color:#0b1f44,stroke-width:1.5px
-    classDef gpu fill:#e8f5d0,stroke:#4c8c00,color:#1d3300,stroke-width:1.5px
-    classDef kv fill:#efe4ff,stroke:#8250df,color:#2d0f5c,stroke-width:1.5px
-    classDef platform fill:#e6edf3,stroke:#6e7781,color:#1f2328,stroke-width:1.5px
-    classDef obs fill:#fff4d6,stroke:#bf8700,color:#3d2a00,stroke-width:1.5px
-    class drv,k3s,dp,mig,kai,grove platform
-    class dcgm,prom,graf obs
-    class op,dgd,fe dynamo
-    class wk gpu
-    class ap client
-    style host fill:none,stroke:#6e7781,stroke-dasharray:4 3
-    style gpuop fill:none,stroke:#6e7781,stroke-dasharray:4 3
-    style mon fill:none,stroke:#bf8700,stroke-dasharray:4 3
-    style dyn fill:none,stroke:#1f6feb,stroke-dasharray:4 3
-    linkStyle 10,11 stroke:#1f6feb,stroke-width:2.5px
-    linkStyle 0,3,8,9 stroke:#bf8700
-```
+![The platform stack: host OS with the NVIDIA driver and k3s; the GPU Operator namespace (device plugin, MIG manager, DCGM exporter); the monitoring namespace (Prometheus and Grafana); the dynamo-system namespace (Dynamo operator, KAI scheduler, Grove, the DynamoGraphDeployment, frontend pod, vLLM worker pods and the AIPerf load generator)](../figures/diagrams/platform-stack.svg)
 
 | Layer | Version | What it is for in this project |
 |---|---|---|
@@ -311,23 +262,7 @@ working rule from these repeats, not a statistical bound.
 
 ### From raw exports to the charts in this repo
 
-```mermaid
-flowchart LR
-    s["bench/sweep.sh (inside the AIPerf pod)"] --> n["node: per-point AIPerf exports<br/>profile_export_aiperf.json + gpu_telemetry.json"]
-    n --> r["results/ in this repo<br/>(host and time identifiers removed)"]
-    r --> m["figures/make_figures.py"]
-    m --> p["figures/*.png"]
-    m --> t["figures/tables/*.md and the tables inside docs/"]
-    classDef client fill:#eef1f4,stroke:#57606a,color:#1f2328,stroke-width:1.5px
-    classDef dynamo fill:#dbeafe,stroke:#1f6feb,color:#0b1f44,stroke-width:1.5px
-    classDef gpu fill:#e8f5d0,stroke:#4c8c00,color:#1d3300,stroke-width:1.5px
-    classDef kv fill:#efe4ff,stroke:#8250df,color:#2d0f5c,stroke-width:1.5px
-    classDef platform fill:#e6edf3,stroke:#6e7781,color:#1f2328,stroke-width:1.5px
-    classDef obs fill:#fff4d6,stroke:#bf8700,color:#3d2a00,stroke-width:1.5px
-    class s client
-    class n platform
-    class r,m,p,t obs
-```
+![Results pipeline: bench/sweep.sh in the AIPerf pod writes per-point AIPerf exports on the node; they are copied into results/ with host and time identifiers removed; figures/make_figures.py turns them into the PNG charts and the tables in the docs](../figures/diagrams/results-pipeline.svg)
 
 Every chart and table in this repository is regenerated from `results/` by
 [figures/make_figures.py](../figures/make_figures.py), so any number can be traced to one AIPerf export.

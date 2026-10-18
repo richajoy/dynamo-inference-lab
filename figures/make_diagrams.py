@@ -15,7 +15,7 @@ from pathlib import Path
 OUT = Path(__file__).resolve().parent
 FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
 
-# One palette for every diagram: same meaning as the Mermaid class colours in the docs.
+# One palette for every diagram: same meaning as the class colours in figures/diagrams/*.mmd.
 STYLE = """
   .bg {{ fill: #ffffff; }}
   .ink {{ fill: #1f2328; }} .muted {{ fill: #57606a; }} .boxink {{ fill: #1f2328; }}

@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant N as node shell (profile/nsys-capture.sh)
+    participant W as worker pod (nsys session "vllm")
+    participant A as AIPerf pod
+    autonumber
+    N->>W: nsys start -c cudaProfilerApi --capture-range-end=repeat
+    rect rgba(31, 111, 235, 0.10)
+    loop prefill, decode, mixed windows
+        N->>A: warm-up burst (not recorded)
+        A->>W: POST /engine/control/start_profile
+        Note over W: cudaProfilerStart: a range opens,<br/>vLLM wraps every step in an NVTX range
+        N->>A: recorded burst (8 / 16 / 24 requests)
+        A->>W: POST /engine/control/stop_profile
+    end
+    end
+    N->>W: nsys stop: one report per window

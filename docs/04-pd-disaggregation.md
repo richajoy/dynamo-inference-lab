@@ -23,28 +23,7 @@ request's KV cache must travel from one GPU to the other, and the ratio of prefi
 
 ## Who does what in a disaggregated request
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant F as Dynamo frontend (router)
-    participant P as Prefill worker (GPU 0)
-    participant D as Decode worker (GPU 1)
-    autonumber
-    C->>F: prompt (6,001 tokens)
-    rect rgba(224, 123, 0, 0.14)
-    F->>P: prefill leg: request rewritten to "prefill only, 1 token, keep the KV"
-    P->>P: vLLM computes the KV for all 36 layers, stages the blocks
-    P-->>F: kv_transfer_params (engine id, block ids, address)
-    end
-    F->>D: decode leg, with the transfer params attached
-    rect rgba(130, 80, 223, 0.14)
-    D->>P: NIXL READ of the staged blocks (846 MiB) over the transport UCX chose
-    Note over P,D: cuda_ipc over NVLink: ~5 ms. tcp over the pod network: ~2,000 ms
-    end
-    rect rgba(76, 140, 0, 0.14)
-    D-->>C: tokens 2..N, streamed through the frontend
-    end
-```
+![Sequence of a disaggregated request: the client sends a 6,001-token prompt to the Dynamo frontend; the prefill leg runs on the prefill worker, which stages the KV blocks and returns kv_transfer_params; the decode leg goes to the decode worker, which pulls the 846 MiB of KV blocks with a NIXL READ (about 5 ms over NVLink, about 2,000 ms over TCP) and streams tokens 2 to N back through the frontend](../figures/diagrams/pd-request-sequence.svg)
 
 | Layer | Component | Its job here | How it is configured |
 |---|---|---|---|
