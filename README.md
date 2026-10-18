@@ -71,7 +71,11 @@ baseline; the exercise links give the conditions.
 
 ![The stack: the client sends requests to the Dynamo frontend (HTTP, tokenize, KV-aware router), which routes to a vLLM prefill or aggregated worker and a vLLM decode worker; the KV cache moves between workers via NIXL / UCX over NVLink or TCP; the Dynamo planner sets replica counts and the Dynamo operator creates the worker pods from the DynamoGraphDeployment](figures/diagrams/stack-overview.svg)
 
-![Animated diagram: in aggregated serving the prompt goes from the client through the Dynamo frontend to one GPU, which prefills and then streams tokens back; in disaggregated serving the prompt goes to a prefill GPU, the KV cache moves to a decode GPU over NIXL, and the decode GPU streams the tokens](figures/anim-request-path.svg)
+**Reading the diagram.** Blue arrows are the request path: the Dynamo frontend tokenizes the prompt, picks a worker
+and runs the request. The purple dotted arrow is the KV cache moving from the prefill GPU to the decode GPU, which
+happens only when serving is disaggregated; an aggregated worker does both phases itself. Grey arrows are the control
+plane: the planner decides replica counts and the operator turns them into pods.
+[Exercise 4](docs/04-pd-disaggregation.md) animates one request through both modes.
 
 | Layer | Component | Version |
 |---|---|---|

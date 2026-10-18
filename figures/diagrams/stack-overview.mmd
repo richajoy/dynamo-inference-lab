@@ -1,4 +1,4 @@
-flowchart LR
+flowchart TB
     C[Client / AIPerf] --> F[Dynamo frontend<br/>HTTP, tokenize, KV-aware router]
     F --> P[vLLM prefill or aggregated worker<br/>one GPU or MIG slice]
     F --> D[vLLM decode worker]
