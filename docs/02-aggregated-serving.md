@@ -4,11 +4,11 @@
 explain every curve with the step-time model from the [foundations](00-foundations.md). This run is the baseline
 every later exercise is compared with.
 
-**What this exercise makes clear**
-- How batching shares one weight read across many users, which is why per-GPU throughput rises ~43x from 1 to 64 users while each stream slows only ~30%.
-- How long prompts stall everyone else's stream, and why that cost shows up in the token-gap distribution rather than the mean.
-- Where the floor on time-to-first-token comes from, and why a faster GPU does not lower it.
-- What a faster GPU buys, and why the gain differs for prompt processing and for generation.
+**Questions this exercise clarifies**
+- Why per-GPU throughput rises ~43x from 1 to 64 concurrent users while each user's stream slows by only ~30%.
+- Why long prompts hurt everyone else's stream, and by how much.
+- Where the floor on time-to-first-token comes from (it is not the GPU).
+- What a faster GPU buys, and why it is different for prompts and for generation.
 
 ---
 

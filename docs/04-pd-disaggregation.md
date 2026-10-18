@@ -3,11 +3,11 @@
 **Goal.** Run prefill and decode on separate GPUs, prove the KV cache really moves between them, measure how fast,
 and find out when "one prefill GPU + one decode GPU" beats "two GPUs that each do both".
 
-**What this exercise makes clear**
-- The division of labour in a disaggregated request: Dynamo orchestrates, vLLM stages and pulls the KV cache, NIXL and UCX move it.
-- How to verify which transport carried the KV cache, and why the standard Kubernetes pod spec silently selects the slow one.
-- Why a fast link is necessary but not sufficient, and what becomes the limit once the link is fast.
-- The first-principles conditions under which disaggregation pays, and when it loses to aggregated serving.
+**Questions this exercise clarifies**
+- Which component does what in a disaggregated request: Dynamo, vLLM, NIXL, UCX.
+- How to tell which transport carried the KV cache, and why the standard Kubernetes pod spec silently picks the slow one.
+- Why a fast link is necessary but not sufficient: what limited transfers once the link was fast.
+- When disaggregation pays, from first principles, and when it loses.
 
 ---
 

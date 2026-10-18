@@ -4,12 +4,12 @@
 round-robin, find which router settings matter, and work out when a better cache hit rate actually shows up as lower
 latency.
 
-**What this exercise makes clear**
-- How Dynamo's KV router tracks what each GPU has cached and turns that into a routing decision.
-- Why the default cost weighting barely beats round-robin on shared-prefix traffic, and how one setting shifts the trade-off.
-- When the router's own hit-rate metric reflects reality, with and without cache events from the workers.
+**Questions this exercise clarifies**
+- How Dynamo's KV router knows what each GPU has cached, and how it picks a worker.
+- Why its default settings barely beat round-robin on our workload, and the one setting that fixes it.
+- Whether you can trust the router's own hit-rate metric, with and without cache events from the workers.
 - When cache hits lower time-to-first-token, and when they only free GPU time.
-- What router-side queueing contributes once the fleet is overloaded.
+- What router-side queueing buys under overload.
 
 ---
 
