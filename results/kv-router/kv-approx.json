@@ -1,0 +1,67 @@
+{
+ "label": "kv-approx",
+ "router_args": "kv-approx",
+ "ab_env": "",
+ "run_line": "run=kv-approx seed=207480 prefixes=40 x 2048, suffix=64, osl=64, c=16, n=800 -> /results/kvr-kv-approx",
+ "summary": {
+  "label": "kv-approx",
+  "seed": "207480",
+  "window_ms": [
+   207486439,
+   207604963
+  ],
+  "engine_hit_rate_total": 0.6048,
+  "engine_hit_rate_by_worker": {
+   "phmlx": 0.6081,
+   "4mv7x": 0.6015
+  },
+  "requests_by_worker": {
+   "phmlx": 401,
+   "4mv7x": 407
+  },
+  "router_predicted_hit_rate": 0.8626,
+  "ttft_ms": {
+   "p50": 155.5,
+   "p90": 410.1,
+   "avg": 212.7
+  },
+  "itl_ms_avg": 29.82
+ },
+ "trace": {
+  "label": "kv-approx",
+  "requests": 804,
+  "requests_by_worker": {
+   "7060913075586581": 399,
+   "8546010185118453": 405
+  },
+  "actual_hit_tokens": 0.868,
+  "actual_hit_blocks_mean": 0.8626,
+  "prefixes_seen": 44,
+  "prefix_affinity": 0.643,
+  "ttft_all": {
+   "n": 804,
+   "ttft_p50": 165.6,
+   "ttft_p90": 415.4,
+   "prefill_p50": 161.2,
+   "queue_p50": 4.6
+  },
+  "ttft_cache_hit": {
+   "n": 720,
+   "ttft_p50": 109.9,
+   "ttft_p90": 313.3,
+   "prefill_p50": 103.9,
+   "queue_p50": 4.6
+  },
+  "ttft_cache_miss": {
+   "n": 84,
+   "ttft_p50": 416.5,
+   "ttft_p90": 956.1,
+   "prefill_p50": 412.0,
+   "queue_p50": 5.0
+  },
+  "predicted_hit_blocks_mean": 0.8626,
+  "prediction_error_mean": 0.0,
+  "prediction_abs_error_mean": 0.0,
+  "overpredicted_by_gt_0.25": 0.0
+ }
+}

@@ -1,0 +1,109 @@
+# Profiling variant of agg-qwen3-8b (exercise 7): SAME name, model and engine flags as deploy/agg-qwen3-8b.yaml, so the
+# trace matches the baseline sweep. The only differences:
+#   1. The worker runs under `nsys launch` (session "vllm"): the app runs normally and NOTHING is recorded.
+#      profile/nsys-capture.sh arms it once (`nsys start -c cudaProfilerApi --capture-range-end=repeat`), then each
+#      window is opened/closed over HTTP: POST :9090/engine/control/{start,stop}_profile (Dynamo engine routes,
+#      vendor/dynamo/components/src/dynamo/vllm/worker_factory.py:1744) -> vLLM profiler -> cudaProfilerStart/Stop.
+#      --profiler-config '{"profiler":"cuda"}' selects that profiler. Bonus: while it is active vLLM wraps every
+#      engine step in an NVTX range execute_context_<n>(<tok>)_generation_<n>(<tok>) = prefill vs decode per step.
+#   2. Host Nsight Systems mounted read-only at /opt/nsight-systems (host symlink /opt/nvidia/nsys-current).
+#   3. /var/lib/nsys-reports mounted at /reports (must be owned by uid 1000, the image user).
+#   4. Liveness probe relaxed: operator default restarts the worker after 1-3 failed /live checks (5 s period,
+#      vendor/dynamo/deploy/operator/internal/dynamo/component_worker.go); a trace flush stall must not kill the pod.
+#      Assumption (it held in practice): user container fields override operator defaults. Verify with
+#      kubectl get pod <worker> -o jsonpath='{.spec.containers[0].livenessProbe}'.
+# nsys flags:
+#   --trace=cuda,nvtx,osrt   CUDA API + kernels + memcpy, vLLM's per-step NVTX ranges, OS runtime calls (CPU waits).
+#   --cuda-graph-trace=node  decode runs as CUDA graph replays; default traces the whole graph as ONE item, node mode
+#                             shows the kernels inside it (more overhead, which is why captures are short).
+#   NOT --trace-fork-before-exec: Dynamo already forces VLLM_WORKER_MULTIPROC_METHOD=spawn
+#                             (vendor/dynamo/components/src/dynamo/vllm/main.py:633) and nsys docs warn the flag can
+#                             crash/deadlock. Add it back only if EngineCore kernels are missing from the report.
+#   node mode is for KERNEL ATTRIBUTION only (significant overhead); timing claims come from metrics/graph mode.
+# Apply:   kubectl -n dynamo-system apply -f deploy/prof-agg-qwen3-8b.yaml
+# Revert:  kubectl -n dynamo-system apply -f deploy/agg-qwen3-8b.yaml
+apiVersion: nvidia.com/v1beta1
+kind: DynamoGraphDeployment
+metadata:
+  name: agg-qwen3-8b
+  namespace: dynamo-system
+spec:
+  components:
+  - name: Frontend
+    type: frontend
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+  - name: VllmDecodeWorker
+    type: worker
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          workingDir: /workspace/examples/backends/vllm
+          command: ["/opt/nsight-systems/bin/nsys"]
+          args:
+          - launch
+          - --session-new=vllm
+          - --trace=cuda,nvtx,osrt
+          - --cuda-graph-trace=node
+          - python3
+          - -m
+          - dynamo.vllm
+          - --model
+          - Qwen/Qwen3-8B
+          - --gpu-memory-utilization
+          - "0.90"
+          - --max-model-len
+          - "8192"
+          - --max-num-seqs
+          - "64"
+          - --block-size
+          - "16"
+          - --profiler-config
+          - '{"profiler":"cuda"}'
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          env:
+          - name: HF_HOME
+            value: /models/hf
+          livenessProbe:
+            httpGet: { path: /live, port: system }
+            periodSeconds: 10
+            timeoutSeconds: 8
+            failureThreshold: 30
+          volumeMounts:
+          - name: hf-cache
+            mountPath: /models/hf
+          - name: nsys
+            mountPath: /opt/nsight-systems
+            readOnly: true
+          - name: reports
+            mountPath: /reports
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              ephemeral-storage: 4Gi
+        volumes:
+        - name: hf-cache
+          hostPath:
+            path: /var/lib/hf-cache
+            type: Directory
+        - name: nsys
+          hostPath:
+            path: /opt/nvidia/nsys-current
+            type: Directory
+        - name: reports
+          hostPath:
+            path: /var/lib/nsys-reports
+            type: Directory

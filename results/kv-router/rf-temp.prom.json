@@ -1,0 +1,10 @@
+{
+ "queue_pending_requests max": 0.0,
+ "queue_pending_requests avg": 0.0,
+ "queue_pending_isl_tokens max": 0.0,
+ "active_prefill_tokens max per worker": 4291.0,
+ "active_decode_blocks max per worker": 2700.0,
+ "non_max_overlap_selections": 0.0,
+ "router_requests": 869.338,
+ "routing_overhead_ms avg": 0.087
+}

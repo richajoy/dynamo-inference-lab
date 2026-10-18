@@ -1,0 +1,39 @@
+# kube-prometheus-stack for a single-node lab cluster.
+# Release name MUST be "prometheus" in namespace "monitoring": Dynamo's documented
+# prometheusEndpoint is http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+# Source: vendor/dynamo/docs/fern/pages/kubernetes/installation/observability.md (v1.5.1)
+
+prometheus:
+  prometheusSpec:
+    # Discover PodMonitors/ServiceMonitors created OUTSIDE this Helm release:
+    # the Dynamo operator's PodMonitors and the GPU Operator's dcgm-exporter ServiceMonitor.
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorNamespaceSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    probeNamespaceSelector: {}
+    scrapeInterval: 5s          # short: we watch TTFT/ITL and scaling react within seconds
+    retention: 7d
+    resources:
+      requests: { cpu: 250m, memory: 1Gi }
+      limits: { memory: 4Gi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path   # k3s built-in provisioner
+          accessModes: ["ReadWriteOnce"]
+          resources: { requests: { storage: 20Gi } }
+
+grafana:
+  adminPassword: dynamo-lab      # lab only; reached via ssh tunnel on localhost:3000
+  service:
+    type: ClusterIP
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard   # any ConfigMap with this label in any namespace is loaded
+      labelValue: "1"
+      searchNamespace: ALL
+
+alertmanager:
+  enabled: false                 # no alert routing in the lab

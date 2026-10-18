@@ -1,0 +1,24 @@
+{
+ "label": "h100-kv-pls10",
+ "seed": "209545",
+ "window_ms": [
+  209551751,
+  209579634
+ ],
+ "engine_hit_rate_total": 0.8922,
+ "engine_hit_rate_by_worker": {
+  "4v84k": 0.8991,
+  "d7lcr": 0.8845
+ },
+ "requests_by_worker": {
+  "4v84k": 424,
+  "d7lcr": 384
+ },
+ "router_predicted_hit_rate": 0.8857,
+ "ttft_ms": {
+  "p50": 44.6,
+  "p90": 49.3,
+  "avg": 49.0
+ },
+ "itl_ms_avg": 5.71
+}

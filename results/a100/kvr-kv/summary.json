@@ -1,0 +1,24 @@
+{
+ "label": "kv",
+ "seed": "207247",
+ "window_ms": [
+  207253941,
+  207366507
+ ],
+ "engine_hit_rate_total": 0.6875,
+ "engine_hit_rate_by_worker": {
+  "phmlx": 0.6908,
+  "4mv7x": 0.6841
+ },
+ "requests_by_worker": {
+  "phmlx": 414,
+  "4mv7x": 393
+ },
+ "router_predicted_hit_rate": 0.6763,
+ "ttft_ms": {
+  "p50": 113.5,
+  "p90": 323.0,
+  "avg": 195.4
+ },
+ "itl_ms_avg": 28.27
+}

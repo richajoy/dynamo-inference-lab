@@ -1,0 +1,49 @@
+# NVIDIA GPU Operator v26.7.1 values for a single GPU node running k3s (driver preinstalled on the host).
+# Chart: nvidia/gpu-operator  (helm.ngc.nvidia.com/nvidia)
+#
+# Host facts checked before install:
+#   driver 580.105.08 already installed in the host image
+#   nvidia-container-toolkit 1.18.1 already installed on the host
+#   k3s auto-detects nvidia-container-runtime and adds it to its own containerd
+#   RmProfilingAdminOnly=1 (profiling counters admin-only)
+
+operator:
+  defaultRuntime: containerd
+
+# --- Which operator components should manage this node? -----------------------
+# The operator can install/own each layer of the GPU stack, or skip it if the host
+# already provides it. Wrong choices here either fight the host (two drivers / two
+# toolkits rewriting containerd) or leave a layer missing (no GPUs advertised).
+#
+
+driver:
+  enabled: false        # host already has driver 580.105.08 (host image)
+toolkit:
+  enabled: false       # host has toolkit 1.18.1; k3s auto-registers the nvidia runtime
+devicePlugin:
+  enabled: true        # advertises nvidia.com/gpu to kubelet
+dcgmExporter:
+  enabled: true        # GPU metrics on :9400 for Prometheus
+  serviceMonitor:
+    enabled: true   # needs kube-prometheus-stack CRDs (platform/monitoring/install.sh installs them first)
+  config:
+    name: dcgm-metrics        # ConfigMap from platform/monitoring/dcgm-metrics.csv
+  env:
+    - name: DCGM_EXPORTER_COLLECTORS
+      value: /etc/dcgm-exporter/dcgm-metrics.csv
+    # Default collect interval is 30000 ms (measured: power value changed once per ~30 s), so 5 s
+    # Prometheus scrapes re-read stale values and short AIPerf runs got no GPU samples. 1 s for the lab.
+    - name: DCGM_EXPORTER_INTERVAL
+      value: "1000"
+migManager:
+  enabled: true        # applies MIG layouts from the nvidia.com/mig.config node label
+# -----------------------------------------------------------------------------
+
+# Always on: GPU Feature Discovery labels the node (product, memory, MIG capability)
+gfd:
+  enabled: true
+
+# MIG exposure when migManager applies a layout (exercise 5).
+# mixed => resources like nvidia.com/mig-3g.20gb ; single => all slices as nvidia.com/gpu
+mig:
+  strategy: mixed

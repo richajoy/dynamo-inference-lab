@@ -1,0 +1,23 @@
+# Overlay: advertise one GPU as 2 x nvidia.com/gpu via time-slicing (used for the two-worker KV-routing A/B on a
+# single A100, exercise 3).
+#   on : helm upgrade gpu-operator ... -f values.yaml -f timeslice-2.values.yaml
+#   off: helm upgrade gpu-operator ... -f values.yaml     (allocatable back to 1)
+# Time-slicing gives NO memory isolation: each pod must cap its own memory (vLLM --gpu-memory-utilization /
+# --kv-cache-memory-bytes). Contexts share SMs by time slice, so co-located workers slow each other down.
+devicePlugin:
+  config:
+    create: true
+    name: time-slicing-config
+    default: any
+    data:
+      any: |-
+        version: v1
+        flags:
+          migStrategy: mixed     # match values.yaml mig.strategy
+        sharing:
+          timeSlicing:
+            renameByDefault: false
+            failRequestsGreaterThanOne: true
+            resources:
+            - name: nvidia.com/gpu
+              replicas: 2

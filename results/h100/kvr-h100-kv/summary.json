@@ -1,0 +1,24 @@
+{
+ "label": "h100-kv",
+ "seed": "209480",
+ "window_ms": [
+  209486969,
+  209516591
+ ],
+ "engine_hit_rate_total": 0.6409,
+ "engine_hit_rate_by_worker": {
+  "4v84k": 0.6439,
+  "d7lcr": 0.6379
+ },
+ "requests_by_worker": {
+  "4v84k": 403,
+  "d7lcr": 405
+ },
+ "router_predicted_hit_rate": 0.6349,
+ "ttft_ms": {
+  "p50": 44.7,
+  "p90": 74.4,
+  "avg": 53.8
+ },
+ "itl_ms_avg": 6.17
+}

@@ -1,0 +1,24 @@
+{
+ "label": "kv-pls10",
+ "seed": "207777",
+ "window_ms": [
+  207783983,
+  207884445
+ ],
+ "engine_hit_rate_total": 0.8949,
+ "engine_hit_rate_by_worker": {
+  "phmlx": 0.8929,
+  "4mv7x": 0.8968
+ },
+ "requests_by_worker": {
+  "phmlx": 410,
+  "4mv7x": 397
+ },
+ "router_predicted_hit_rate": 0.8895,
+ "ttft_ms": {
+  "p50": 88.6,
+  "p90": 165.9,
+  "avg": 125.4
+ },
+ "itl_ms_avg": 25.51
+}

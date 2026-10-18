@@ -1,0 +1,126 @@
+# DIAGNOSTIC variant, NOT a production pattern: both P/D worker pods see BOTH GPUs.
+# Finding it tests: with one GPU per pod (device plugin isolation) UCX moved KV over tcp/eth0 at ~420 MB/s even with
+# hostIPC, and cuda_ipc never appeared as a candidate. CUDA IPC needs the reading process to see the peer GPU.
+# Here: no nvidia.com/gpu request (scheduler does not account these GPUs), NVIDIA_VISIBLE_DEVICES=all, and
+# CUDA_VISIBLE_DEVICES pins prefill to GPU 0 and decode to GPU 1; hostIPC + hostPID so IPC handles resolve.
+# Run only when no other GPU workload is on the node.
+apiVersion: nvidia.com/v1beta1
+kind: DynamoGraphDeployment
+metadata:
+  name: pdp2p-qwen3-8b
+  namespace: dynamo-system
+spec:
+  components:
+  - name: Frontend
+    type: frontend
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+  - name: VllmPrefillWorker
+    type: prefill
+    replicas: 1
+    podTemplate:
+      spec:
+        hostIPC: true
+        hostPID: true
+        runtimeClassName: nvidia
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          workingDir: /workspace/examples/backends/vllm
+          command: ["python3", "-m", "dynamo.vllm"]
+          args:
+          - --model
+          - Qwen/Qwen3-8B
+          - --gpu-memory-utilization
+          - "0.90"
+          - --max-model-len
+          - "8192"
+          - --max-num-seqs
+          - "64"
+          - --block-size
+          - "16"
+          - --disaggregation-mode
+          - prefill
+          - --kv-transfer-config
+          - '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          env:
+          - name: HF_HOME
+            value: /models/hf
+          - name: NVIDIA_VISIBLE_DEVICES
+            value: all
+          - name: CUDA_VISIBLE_DEVICES
+            value: "0"
+          - name: UCX_PROTO_INFO          # UCX logs the protocol + transport (cuda_ipc / tcp / ...) chosen per endpoint
+            value: "y"
+          volumeMounts:
+          - name: hf-cache
+            mountPath: /models/hf
+          resources:
+            requests:
+              ephemeral-storage: 4Gi
+        volumes:
+        - name: hf-cache
+          hostPath:
+            path: /var/lib/hf-cache
+            type: Directory
+  - name: VllmDecodeWorker
+    type: decode
+    replicas: 1
+    podTemplate:
+      spec:
+        hostIPC: true
+        hostPID: true
+        runtimeClassName: nvidia
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          workingDir: /workspace/examples/backends/vllm
+          command: ["python3", "-m", "dynamo.vllm"]
+          args:
+          - --model
+          - Qwen/Qwen3-8B
+          - --gpu-memory-utilization
+          - "0.90"
+          - --max-model-len
+          - "8192"
+          - --max-num-seqs
+          - "64"
+          - --block-size
+          - "16"
+          - --disaggregation-mode
+          - decode
+          - --kv-transfer-config
+          - '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          env:
+          - name: HF_HOME
+            value: /models/hf
+          - name: NVIDIA_VISIBLE_DEVICES
+            value: all
+          - name: CUDA_VISIBLE_DEVICES
+            value: "1"
+          - name: UCX_PROTO_INFO          # UCX logs the protocol + transport (cuda_ipc / tcp / ...) chosen per endpoint
+            value: "y"
+          volumeMounts:
+          - name: hf-cache
+            mountPath: /models/hf
+          resources:
+            requests:
+              ephemeral-storage: 4Gi
+        volumes:
+        - name: hf-cache
+          hostPath:
+            path: /var/lib/hf-cache
+            type: Directory

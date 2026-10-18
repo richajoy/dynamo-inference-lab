@@ -1,0 +1,19 @@
+# NIXL 'KV Transfer metrics' lines printed by the vLLM 0.28.0 NixlConnector on the decode worker (one line per
+# 10 s interval in which transfers completed). Copied from live 'kubectl logs' output; the pod logs were not kept.
+# Units as vLLM prints them: 'MB' is MiB, 'MB/s' is MiB/s. Times are elapsed from the first line.
+# Variants, in order: T+0:00-0:20 one GPU per pod (TCP) | T+4:29-4:39 one GPU per pod + hostIPC (TCP) |
+# T+30:34 both GPUs visible, idle (cuda_ipc over NVLink) | T+103:27-103:40 P/D across MIG slices (TCP).
+## timestamped (one line per 10 s metrics interval, duplicates removed)
+T+0:00 Num successful transfers=1, Avg xfer time (ms)=1972.8, P90 xfer time (ms)=1972.8, Avg post time (ms)=0.33, P90 post time (ms)=0.33, Avg MB per transfer=846.0, Throughput (MB/s)=428.832, Avg number of descriptors=36.0
+T+0:10 Num successful transfers=4, Avg xfer time (ms)=2022.598, P90 xfer time (ms)=2079.625, Avg post time (ms)=0.622, P90 post time (ms)=0.724, Avg MB per transfer=846.0, Throughput (MB/s)=418.274, Avg number of descriptors=36.0
+T+0:20 Num successful transfers=3, Avg xfer time (ms)=1963.963, P90 xfer time (ms)=1966.174, Avg post time (ms)=0.889, P90 post time (ms)=1.29, Avg MB per transfer=846.0, Throughput (MB/s)=430.762, Avg number of descriptors=60.0
+T+4:29 Num successful transfers=3, Avg xfer time (ms)=1998.904, P90 xfer time (ms)=2011.959, Avg post time (ms)=0.527, P90 post time (ms)=0.639, Avg MB per transfer=846.0, Throughput (MB/s)=423.232, Avg number of descriptors=36.0
+T+4:39 Num successful transfers=4, Avg xfer time (ms)=1981.245, P90 xfer time (ms)=1990.373, Avg post time (ms)=0.921, P90 post time (ms)=1.255, Avg MB per transfer=846.0, Throughput (MB/s)=427.004, Avg number of descriptors=54.0
+T+30:34 Num successful transfers=7, Avg xfer time (ms)=5.423, P90 xfer time (ms)=7.82, Avg post time (ms)=1.067, P90 post time (ms)=2.286, Avg MB per transfer=846.0, Throughput (MB/s)=155998.103, Avg number of descriptors=36.0
+T+103:27 Num successful transfers=2, Avg xfer time (ms)=1999.279, P90 xfer time (ms)=2006.951, Avg post time (ms)=0.692, P90 post time (ms)=0.951, Avg MB per transfer=846.0, Throughput (MB/s)=423.153, Avg number of descriptors=36.0
+T+103:37 Num successful transfers=1, Avg xfer time (ms)=1997.16, P90 xfer time (ms)=1997.16, Avg post time (ms)=1.475, P90 post time (ms)=1.475, Avg MB per transfer=846.0, Throughput (MB/s)=423.602, Avg number of descriptors=72.0
+T+103:40 Num successful transfers=1, Avg xfer time (ms)=2006.569, P90 xfer time (ms)=2006.569, Avg post time (ms)=1.675, P90 post time (ms)=1.675, Avg MB per transfer=846.0, Throughput (MB/s)=421.615, Avg number of descriptors=108.0
+## pd-p2p (NVLink, block 16) under long / prefill-heavy c=64 load (timestamps not captured)
+Num successful transfers=24, Avg xfer time (ms)=90.063, P90 xfer time (ms)=132.149, Avg post time (ms)=50.561, P90 post time (ms)=52.347, Avg MB per transfer=843.75, Throughput (MB/s)=9368.446, Avg number of descriptors=13327.5
+Num successful transfers=34, Avg xfer time (ms)=91.578, P90 xfer time (ms)=134.349, Avg post time (ms)=51.624, P90 post time (ms)=52.655, Avg MB per transfer=843.75, Throughput (MB/s)=9213.457, Avg number of descriptors=13500.0
+Num successful transfers=34, Avg xfer time (ms)=96.393, P90 xfer time (ms)=135.303, Avg post time (ms)=51.693, P90 post time (ms)=52.662, Avg MB per transfer=843.75, Throughput (MB/s)=8753.194, Avg number of descriptors=13500.0

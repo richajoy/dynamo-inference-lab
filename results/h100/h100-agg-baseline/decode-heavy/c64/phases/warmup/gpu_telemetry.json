@@ -1,0 +1,276 @@
+{
+ "data": {
+  "endpoints": {
+   "nvidia-dcgm-exporter.gpu-operator.svc:9400": {
+    "gpus": {
+     "gpu_0": {
+      "gpu_index": 0,
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_uuid": "GPU-bec8a25c-e7b3-1eac-c2b0-79e1eb5e6dc3",
+      "hostname": "gpu-node",
+      "metrics": {
+       "nvidia_energy_consumption": {
+        "avg": 0.0029732380000000447,
+        "unit": "MJ"
+       },
+       "nvidia_gpu_utilization": {
+        "avg": 86.66666666666667,
+        "count": 15,
+        "max": 100.0,
+        "min": 0.0,
+        "p1": 0.0,
+        "p10": 40.000000000000014,
+        "p25": 100.0,
+        "p5": 0.0,
+        "p50": 100.0,
+        "p75": 100.0,
+        "p90": 100.0,
+        "p95": 100.0,
+        "p99": 100.0,
+        "std": 35.18657752744984,
+        "sum": 1300.0,
+        "unit": "%"
+       },
+       "nvidia_memory_used": {
+        "avg": 75.981914112,
+        "count": 15,
+        "max": 75.981914112,
+        "min": 75.981914112,
+        "p1": 75.981914112,
+        "p10": 75.981914112,
+        "p25": 75.981914112,
+        "p5": 75.981914112,
+        "p50": 75.981914112,
+        "p75": 75.981914112,
+        "p90": 75.981914112,
+        "p95": 75.981914112,
+        "p99": 75.981914112,
+        "std": 0.0,
+        "sum": 1139.72871168,
+        "unit": "GB"
+       },
+       "nvidia_memory_utilization": {
+        "avg": 73.0,
+        "count": 15,
+        "max": 85.0,
+        "min": 0.0,
+        "p1": 0.0,
+        "p10": 33.60000000000001,
+        "p25": 84.0,
+        "p5": 0.0,
+        "p50": 84.0,
+        "p75": 84.0,
+        "p90": 85.0,
+        "p95": 85.0,
+        "p99": 85.0,
+        "std": 29.640705601780613,
+        "sum": 1095.0,
+        "unit": "%"
+       },
+       "nvidia_power_usage": {
+        "avg": 381.0361333333333,
+        "count": 15,
+        "max": 435.628,
+        "min": 120.605,
+        "p1": 120.605,
+        "p10": 218.18460000000002,
+        "p25": 395.759,
+        "p5": 120.605,
+        "p50": 429.571,
+        "p75": 432.449,
+        "p90": 434.11,
+        "p95": 434.5654,
+        "p99": 435.41548,
+        "std": 108.28436438699373,
+        "sum": 5715.5419999999995,
+        "unit": "W"
+       },
+       "nvidia_sm_utilization": {
+        "avg": 61.77285999999999,
+        "count": 15,
+        "max": 74.43260000000001,
+        "min": 0.0,
+        "p1": 0.0,
+        "p10": 22.95408000000001,
+        "p25": 65.16760000000001,
+        "p5": 0.0,
+        "p50": 73.63579999999999,
+        "p75": 74.1111,
+        "p90": 74.35072000000001,
+        "p95": 74.43260000000001,
+        "p99": 74.43260000000001,
+        "std": 25.72478068308011,
+        "sum": 926.5928999999998,
+        "unit": "%"
+       },
+       "nvidia_temperature": {
+        "avg": 44.13333333333333,
+        "count": 15,
+        "max": 46.0,
+        "min": 39.0,
+        "p1": 39.0,
+        "p10": 40.6,
+        "p25": 43.5,
+        "p5": 39.0,
+        "p50": 45.0,
+        "p75": 46.0,
+        "p90": 46.0,
+        "p95": 46.0,
+        "p99": 46.0,
+        "std": 2.3258383025317584,
+        "sum": 662.0,
+        "unit": "\u00b0C"
+       }
+      },
+      "namespace": "dynamo-system",
+      "platform": "nvidia",
+      "pod_name": "agg-qwen3-8b-0-vllmdecodeworker-lxqvn"
+     },
+     "gpu_1": {
+      "gpu_index": 1,
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_uuid": "GPU-05d96311-9eb2-ea01-b8bf-c5ccbeb5ec55",
+      "hostname": "gpu-node",
+      "metrics": {
+       "nvidia_energy_consumption": {
+        "avg": 0.0006333170000000082,
+        "unit": "MJ"
+       },
+       "nvidia_gpu_utilization": {
+        "avg": 0.0,
+        "count": 15,
+        "max": 0.0,
+        "min": 0.0,
+        "p1": 0.0,
+        "p10": 0.0,
+        "p25": 0.0,
+        "p5": 0.0,
+        "p50": 0.0,
+        "p75": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "std": 0.0,
+        "sum": 0.0,
+        "unit": "%"
+       },
+       "nvidia_memory_used": {
+        "avg": 0.0,
+        "count": 15,
+        "max": 0.0,
+        "min": 0.0,
+        "p1": 0.0,
+        "p10": 0.0,
+        "p25": 0.0,
+        "p5": 0.0,
+        "p50": 0.0,
+        "p75": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "std": 0.0,
+        "sum": 0.0,
+        "unit": "GB"
+       },
+       "nvidia_memory_utilization": {
+        "avg": 0.0,
+        "count": 15,
+        "max": 0.0,
+        "min": 0.0,
+        "p1": 0.0,
+        "p10": 0.0,
+        "p25": 0.0,
+        "p5": 0.0,
+        "p50": 0.0,
+        "p75": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "std": 0.0,
+        "sum": 0.0,
+        "unit": "%"
+       },
+       "nvidia_power_usage": {
+        "avg": 70.42506666666667,
+        "count": 15,
+        "max": 70.537,
+        "min": 70.36,
+        "p1": 70.36,
+        "p10": 70.3684,
+        "p25": 70.3835,
+        "p5": 70.36,
+        "p50": 70.391,
+        "p75": 70.4625,
+        "p90": 70.5138,
+        "p95": 70.537,
+        "p99": 70.537,
+        "std": 0.05949725884042045,
+        "sum": 1056.376,
+        "unit": "W"
+       },
+       "nvidia_sm_utilization": {
+        "avg": 0.0,
+        "count": 15,
+        "max": 0.0,
+        "min": 0.0,
+        "p1": 0.0,
+        "p10": 0.0,
+        "p25": 0.0,
+        "p5": 0.0,
+        "p50": 0.0,
+        "p75": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "std": 0.0,
+        "sum": 0.0,
+        "unit": "%"
+       },
+       "nvidia_temperature": {
+        "avg": 34.266666666666666,
+        "count": 15,
+        "max": 35.0,
+        "min": 34.0,
+        "p1": 34.0,
+        "p10": 34.0,
+        "p25": 34.0,
+        "p5": 34.0,
+        "p50": 34.0,
+        "p75": 34.5,
+        "p90": 35.0,
+        "p95": 35.0,
+        "p99": 35.0,
+        "std": 0.45773770821706344,
+        "sum": 514.0,
+        "unit": "\u00b0C"
+       }
+      },
+      "platform": "nvidia"
+     }
+    }
+   }
+  },
+  "error_summary": [],
+  "summary": {
+   "end_time_offset_s": 209225.695,
+   "endpoints_configured": [
+    "http://nvidia-dcgm-exporter.gpu-operator.svc:9400/metrics"
+   ],
+   "endpoints_successful": [
+    "http://nvidia-dcgm-exporter.gpu-operator.svc:9400/metrics"
+   ],
+   "start_time_offset_s": 209218.47
+  }
+ },
+ "phase": {
+  "end_ns": 209225695415778,
+  "phase_index": 0,
+  "phase_kind": "warmup",
+  "phase_name": "warmup",
+  "profiling_index": null,
+  "start_ns": 209218470000517,
+  "was_cancelled": false
+ },
+ "schema_version": 1,
+ "warnings": []
+}

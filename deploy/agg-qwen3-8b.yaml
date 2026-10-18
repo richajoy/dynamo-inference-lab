@@ -1,0 +1,68 @@
+# Aggregated serving baseline (exercise 2): 1 frontend + 1 vLLM worker on one whole GPU (H100 80GB or A100 40GB).
+# Based on vendor/dynamo/examples/backends/vllm/deploy/agg.yaml (v1.5.1).
+# Differences from upstream / agg.sh smoke test:
+#   - Qwen3-8B BF16 (~16 GB weights): big enough for meaningful prefill/decode profiles,
+#   - No --enforce-eager: CUDA graphs ON (what production decode looks like in nsys).
+#   - No artificial KV cap / max-num-seqs 2 from agg.sh.
+# Apply:  kubectl -n dynamo-system apply -f deploy/agg-qwen3-8b.yaml
+apiVersion: nvidia.com/v1beta1
+kind: DynamoGraphDeployment
+metadata:
+  name: agg-qwen3-8b
+  namespace: dynamo-system
+spec:
+  components:
+  - name: Frontend
+    type: frontend
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+  - name: VllmDecodeWorker
+    type: worker
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          workingDir: /workspace/examples/backends/vllm
+          command: ["python3", "-m", "dynamo.vllm"]
+          args:
+          - --model
+          - Qwen/Qwen3-8B
+          - --gpu-memory-utilization
+          - "0.90"
+          - --max-model-len
+          - "8192"
+          - --max-num-seqs
+          - "64"
+          - --block-size
+          - "16"
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          env:
+          - name: HF_HOME
+            value: /models/hf
+          volumeMounts:
+          - name: hf-cache
+            mountPath: /models/hf
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              ephemeral-storage: 4Gi
+        volumes:
+        # Node-local HF cache: weights download once, survive pod restarts/redeploys.
+        # Must be pre-created owned by uid 1000 (image user `dynamo`) via `infra/k3s/install.sh dirs`:
+        # fsGroup does NOT apply to hostPath, and DirectoryOrCreate would create it root-owned (755).
+        - name: hf-cache
+          hostPath:
+            path: /var/lib/hf-cache
+            type: Directory

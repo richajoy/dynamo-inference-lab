@@ -1,0 +1,11 @@
+{
+ "_note": "Re-run of rf-base (first attempt failed 800/800, O10). Only these two fields were captured, from the 12:00 UTC session output; the file written on the node was empty.",
+ "queue_pending_requests max": null,
+ "queue_pending_requests avg": null,
+ "queue_pending_isl_tokens max": null,
+ "active_prefill_tokens max per worker": 2567.0,
+ "active_decode_blocks max per worker": null,
+ "non_max_overlap_selections": null,
+ "router_requests": null,
+ "routing_overhead_ms avg": 0.105
+}

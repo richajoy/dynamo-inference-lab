@@ -1,0 +1,101 @@
+# KV-aware routing A/B (exercise 3). 1 frontend + 2 vLLM workers. On a single A100 the two workers are time-sliced (needs
+# platform/gpu-operator/timeslice-2.values.yaml -> allocatable nvidia.com/gpu: 2).
+# Based on vendor/dynamo/examples/backends/vllm/deploy/agg_router.yaml + agg_router_kv_approx.yaml (v1.5.1).
+#
+# Why these choices:
+#   - Qwen3-4B (8.05 GB BF16) instead of 8B: two copies of 8B weights (32.8 GB) leave no KV room on 40 GB.
+#     Same KV geometry as 8B (36 layers x 8 KV heads x 128 dim) = 147,456 B/token, so earlier math carries over.
+#   - --kv-cache-memory-bytes 7 GiB: skips vLLM's memory profiling, which is unreliable when another process
+#     allocates on the same GPU at the same time (tracked upstream as vLLM #55827). Fixed capacity = 7 GiB / 147,456 B = 50,960 tokens per worker,
+#     known BEFORE deploy (the workload sizing in bench/kv-router-ab.sh depends on it).
+#   - --gpu-memory-utilization 0.45: vLLM still checks at startup that free memory >= gmu x total;
+#     2 x 0.45 leaves room for both. Per worker: ~8.05 weights + 7.5 KV + ~1.5 activations/graphs/context.
+#   - --kv-events-config: Dynamo 1.5.1 does NOT publish KV events unless this is set with
+#     enable_kv_cache_events=true (components/src/dynamo/vllm/args.py create_kv_events_config). Kept on in every
+#     router mode so workers are identical across the A/B; only the frontend changes.
+#   - Frontend router mode is in args so bench/router-mode.sh can switch it with one patch
+#     (round-robin | kv | kv-approx). Starts as round-robin = the baseline.
+# Apply:  kubectl -n dynamo-system delete dgd agg-qwen3-8b   (frees the GPU slices)
+#         kubectl -n dynamo-system apply -f deploy/kvr-qwen3-4b.yaml
+apiVersion: nvidia.com/v1beta1
+kind: DynamoGraphDeployment
+metadata:
+  name: kvr-qwen3-4b
+  namespace: dynamo-system
+spec:
+  components:
+  - name: Frontend
+    type: frontend
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          command: ["python3"]
+          args: ["-m", "dynamo.frontend", "--router-mode", "round-robin"]
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          # Per-request trace (vendor/dynamo/lib/llm/src/request_trace/{config,types}.rs): each request_end record
+          # has kv_hit_rate (router PREDICTION, blocks/blocks), cached_tokens (engine ACTUAL in round-robin only; in kv modes the
+          # router prediction wins a write-once cell, see docs/03-kv-aware-routing.md), input_tokens,
+          # ttft_ms, worker. Lets the A/B pair predicted vs actual PER REQUEST instead of comparing aggregates.
+          # hostPath (not emptyDir) because bench/router-mode.sh restarts this pod per mode; runs are separated by
+          # timestamp. Dir must exist owned by uid 1000. Exact file naming under the prefix: check after first run.
+          env:
+          - { name: DYN_REQUEST_TRACE, value: "1" }
+          - { name: DYN_REQUEST_TRACE_SINKS, value: "file" }
+          - { name: DYN_REQUEST_TRACE_FILE_FORMAT, value: "jsonl" }
+          - { name: DYN_REQUEST_TRACE_FILE_PATH, value: "/trace/kvr" }
+          volumeMounts:
+          - { name: trace, mountPath: /trace }
+        volumes:
+        - name: trace
+          hostPath:
+            path: /var/lib/request-trace
+            type: Directory
+  - name: VllmDecodeWorker
+    type: worker
+    replicas: 2
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          workingDir: /workspace/examples/backends/vllm
+          command: ["python3", "-m", "dynamo.vllm"]
+          args:
+          - --model
+          - Qwen/Qwen3-4B
+          - --gpu-memory-utilization
+          - "0.45"
+          - --kv-cache-memory-bytes
+          - "7516192768"
+          - --max-model-len
+          - "8192"
+          - --max-num-seqs
+          - "32"
+          - --block-size
+          - "16"
+          - --kv-events-config
+          - '{"publisher":"zmq","topic":"kv-events","endpoint":"tcp://*:20080","enable_kv_cache_events":true}'
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          env:
+          - name: HF_HOME
+            value: /models/hf
+          volumeMounts:
+          - name: hf-cache
+            mountPath: /models/hf
+          resources:
+            limits:
+              nvidia.com/gpu: "1"      # one time-slice replica, not a whole GPU
+            requests:
+              ephemeral-storage: 4Gi
+        volumes:
+        - name: hf-cache
+          hostPath:
+            path: /var/lib/hf-cache
+            type: Directory

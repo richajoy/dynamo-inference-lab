@@ -1,0 +1,24 @@
+{
+ "label": "rr",
+ "seed": "207043",
+ "window_ms": [
+  207049333,
+  207177883
+ ],
+ "engine_hit_rate_total": 0.5473,
+ "engine_hit_rate_by_worker": {
+  "phmlx": 0.5426,
+  "4mv7x": 0.552
+ },
+ "requests_by_worker": {
+  "phmlx": 405,
+  "4mv7x": 404
+ },
+ "router_predicted_hit_rate": null,
+ "ttft_ms": {
+  "p50": 105.0,
+  "p90": 283.1,
+  "avg": 197.1
+ },
+ "itl_ms_avg": 31.7
+}

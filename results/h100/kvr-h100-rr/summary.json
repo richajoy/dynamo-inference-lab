@@ -1,0 +1,24 @@
+{
+ "label": "h100-rr",
+ "seed": "209413",
+ "window_ms": [
+  209419513,
+  209452001
+ ],
+ "engine_hit_rate_total": 0.5428,
+ "engine_hit_rate_by_worker": {
+  "4v84k": 0.5355,
+  "d7lcr": 0.5502
+ },
+ "requests_by_worker": {
+  "4v84k": 403,
+  "d7lcr": 404
+ },
+ "router_predicted_hit_rate": null,
+ "ttft_ms": {
+  "p50": 44.5,
+  "p90": 45.8,
+  "avg": 48.8
+ },
+ "itl_ms_avg": 6.54
+}

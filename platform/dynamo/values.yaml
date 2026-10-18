@@ -1,0 +1,31 @@
+# Dynamo Platform chart 1.5.1 (helm.ngc.nvidia.com/nvidia/ai-dynamo/charts/dynamo-platform-1.5.1.tgz)
+# Source of truth: vendor/dynamo/deploy/helm/charts/platform/values.yaml @ v1.5.1
+#
+# Bundled subchart versions pinned by this chart (Chart.yaml dependencies):
+#   kai-scheduler v0.17.0, grove v0.1.0-alpha.13   (not the latest upstream: v0.18.3 / alpha.14)
+# Lab choice: install=true (bundled, tested together). Production guidance is to install
+# KAI/Grove separately and set enabled=true instead.
+
+global:
+  etcd:
+    install: false        # K8s discovery uses the API server (EndpointSlices + DynamoWorkerMetadata)
+  nats:
+    install: false        # v1.5.1 defaults: request plane TCP, event plane ZMQ (confirmed on bare metal)
+  kai-scheduler:
+    install: true         # GPU-aware scheduling, queues, gang scheduling
+  grove:
+    install: true         # PodCliqueSet orchestration for disagg / multinode graphs
+
+kai-scheduler:
+  scheduler:
+    args:
+      # from install-dynamo.md (Option A, bundled KAI)
+      default-staleness-grace-period: "-1s"
+
+dynamo-operator:
+  dynamo:
+    metrics:
+      # Injected into managed pods as PROMETHEUS_ENDPOINT; planner (sla mode) reads TTFT/ITL from here.
+      prometheusEndpoint: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+      podMonitors:
+        enabled: true     # explicit instead of auto-detect: fail loudly if the CRD is missing

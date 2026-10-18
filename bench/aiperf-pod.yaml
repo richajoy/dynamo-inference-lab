@@ -1,0 +1,43 @@
+# In-cluster load generator. Runs AIPerf next to the frontend Service, so measurements don't
+# go through `kubectl port-forward` (a single tunnelled stream that distorts latency at high concurrency).
+# Client image is deliberately independent of the server image:
+#   - AIPerf is a pure-Python HTTP client (no GPU, no CUDA); vllm-runtime (~20 GB) is not needed.
+#   - aiperf pins aiohttp~=3.13.3 while vllm-runtime 1.5.1 overrides aiohttp -> keep them apart.
+#   - python:3.12 (full, not slim) includes curl, used by sweep.sh.
+# aiperf version = the one Dynamo 1.5.1 pins (container/deps/requirements.benchmark.txt).
+# Results land on the node in /var/lib/bench-results (prepared by `infra/k3s/install.sh dirs`).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aiperf
+  namespace: dynamo-system
+spec:
+  restartPolicy: Never
+  containers:
+  - name: aiperf
+    image: python:3.12
+    # Local patch: aiperf <=0.13.0 reads DCGM label "Hostname", dcgm-exporter here
+    # emits "hostname"; hostname=None then fails validation (no default) and the telemetry result is lost.
+    # Remove once fixed upstream.
+    command:
+    - bash
+    - -c
+    - |
+      pip install --quiet --no-cache-dir aiperf==0.12.0 && \
+      AP=$(python3 -c 'import aiperf, os; print(os.path.dirname(aiperf.__file__))') && \
+      sed -i 's/hostname=labels.get("Hostname"),/hostname=labels.get("Hostname") or labels.get("hostname"),/' $AP/gpu_telemetry/dcgm_collector.py && \
+      sed -i 's/^    hostname: str | None$/    hostname: str | None = None/' $AP/common/models/export_models.py && \
+      grep -q 'labels.get("hostname")' $AP/gpu_telemetry/dcgm_collector.py && echo AIPERF_PATCHED && \
+      echo AIPERF_READY && sleep infinity
+    # No shared HF cache: this pod runs as root and would leave root-owned files in the
+    # worker's uid-1000 cache. AIPerf only needs the tokenizer (MBs) -> container-local cache.
+    envFrom:
+    - secretRef:
+        name: hf-token-secret
+    resources:
+      requests: { cpu: "4", memory: 8Gi }   # client must not be the bottleneck at concurrency 64
+    volumeMounts:
+    - { name: results, mountPath: /results }
+  volumes:
+  - name: results
+    hostPath: { path: /var/lib/bench-results, type: Directory }

@@ -1,0 +1,24 @@
+{
+ "label": "approx-lru-pls10",
+ "seed": "208095",
+ "window_ms": [
+  208101131,
+  208201610
+ ],
+ "engine_hit_rate_total": 0.8873,
+ "engine_hit_rate_by_worker": {
+  "phmlx": 0.8886,
+  "4mv7x": 0.8859
+ },
+ "requests_by_worker": {
+  "phmlx": 411,
+  "4mv7x": 397
+ },
+ "router_predicted_hit_rate": 0.8819,
+ "ttft_ms": {
+  "p50": 88.1,
+  "p90": 221.4,
+  "avg": 128.8
+ },
+ "itl_ms_avg": 25.51
+}

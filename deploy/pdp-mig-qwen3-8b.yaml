@@ -1,0 +1,136 @@
+# Per-pool autoscaling on MIG (2x H100): deploy/pd-mig-qwen3-8b.yaml + a Planner in disagg mode.
+# Question under test: do GPUs move between prefill and decode? Budget pinned min=max=4 slices (planner counts one
+# MIG slice as one GPU, dra.ResolvePodSetGPUCount), so the planner can only re-split 4 slices between the pools
+# (vendor/dynamo/components/src/dynamo/planner/core/budget.py proportional_clamp_pair).
+# optimization_target=load (planner_config.py:396): explicit thresholds, no profiling / AIC model needed.
+#   prefill: queued prefill tokens per worker >= 6000 -> up, < 500 -> down
+#   decode : KV utilization >= 30 % -> up, < 10 % -> down   (a 3g.40gb slice holds ~124k tokens of Qwen3-8B KV)
+# Load decisions every 10 s (load_adjustment_interval_seconds); throughput scaling off (needs the AIC/SLA model).
+# P/D disaggregation on MIG (2x H100): each worker gets one nvidia.com/mig-3g.40gb slice
+# (node labelled nvidia.com/mig.config=all-3g.40gb -> 2 slices per H100 = 4 slices). Same engine flags as
+# deploy/pd-qwen3-8b.yaml. Known risk: CUDA IPC is blocked between MIG instances, so NIXL/UCX must
+# fall back to a host-staged path. Replicas start 1P + 1D; scale each pool separately via its DGDSA.
+apiVersion: nvidia.com/v1beta1
+kind: DynamoGraphDeployment
+metadata:
+  name: pdp-mig-qwen3-8b
+  namespace: dynamo-system
+spec:
+  components:
+  - name: Frontend
+    type: frontend
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+  - name: Planner
+    type: planner
+    replicas: 1
+    podTemplate:
+      spec:
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.5.1
+          command: ["python3", "-m", "dynamo.planner"]
+          args:
+          - --config
+          - '{"environment": "kubernetes", "backend": "vllm", "mode": "disagg", "optimization_target": "load", "enable_load_scaling": true, "enable_throughput_scaling": false, "pre_deployment_sweeping_mode": "none", "load_adjustment_interval_seconds": 10, "max_gpu_budget": 4, "min_gpu_budget": 4, "prefill_min_endpoint": 1, "decode_min_endpoint": 1, "prefill_scale_up_queue_tokens": 6000, "prefill_scale_down_queue_tokens": 500, "decode_scale_up_kv_rate": 30, "decode_scale_down_kv_rate": 10}'
+  - name: VllmPrefillWorker
+    type: prefill
+    replicas: 1
+    podTemplate:
+      spec:
+        hostIPC: true
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          workingDir: /workspace/examples/backends/vllm
+          command: ["python3", "-m", "dynamo.vllm"]
+          args:
+          - --model
+          - Qwen/Qwen3-8B
+          - --gpu-memory-utilization
+          - "0.90"
+          - --max-model-len
+          - "8192"
+          - --max-num-seqs
+          - "64"
+          - --block-size
+          - "16"
+          - --disaggregation-mode
+          - prefill
+          - --kv-transfer-config
+          - '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          env:
+          - name: HF_HOME
+            value: /models/hf
+          - name: UCX_PROTO_INFO          # UCX logs the protocol + transport (cuda_ipc / tcp / ...) chosen per endpoint
+            value: "y"
+          volumeMounts:
+          - name: hf-cache
+            mountPath: /models/hf
+          resources:
+            limits:
+              nvidia.com/mig-3g.40gb: "1"
+            requests:
+              ephemeral-storage: 4Gi
+        volumes:
+        - name: hf-cache
+          hostPath:
+            path: /var/lib/hf-cache
+            type: Directory
+  - name: VllmDecodeWorker
+    type: decode
+    replicas: 1
+    podTemplate:
+      spec:
+        hostIPC: true
+        containers:
+        - name: main
+          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1
+          workingDir: /workspace/examples/backends/vllm
+          command: ["python3", "-m", "dynamo.vllm"]
+          args:
+          - --model
+          - Qwen/Qwen3-8B
+          - --gpu-memory-utilization
+          - "0.90"
+          - --max-model-len
+          - "8192"
+          - --max-num-seqs
+          - "64"
+          - --block-size
+          - "16"
+          - --disaggregation-mode
+          - decode
+          - --kv-transfer-config
+          - '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
+          env:
+          - name: HF_HOME
+            value: /models/hf
+          - name: UCX_PROTO_INFO          # UCX logs the protocol + transport (cuda_ipc / tcp / ...) chosen per endpoint
+            value: "y"
+          volumeMounts:
+          - name: hf-cache
+            mountPath: /models/hf
+          resources:
+            limits:
+              nvidia.com/mig-3g.40gb: "1"
+            requests:
+              ephemeral-storage: 4Gi
+        volumes:
+        - name: hf-cache
+          hostPath:
+            path: /var/lib/hf-cache
+            type: Directory

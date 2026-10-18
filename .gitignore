@@ -1,0 +1,10 @@
+vendor/
+__pycache__/
+*.pyc
+*.nsys-rep
+*.ncu-rep
+*.sqlite
+.env
+*.env
+hf-token-secret.yaml
+.DS_Store

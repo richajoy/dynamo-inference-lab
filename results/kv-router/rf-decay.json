@@ -1,0 +1,67 @@
+{
+ "label": "rf-decay",
+ "router_args": "kv --router-prefill-load-scale 10 --router-kv-overlap-score-credit-decay 1.0",
+ "ab_env": "CONC=64",
+ "run_line": "run=rf-decay seed=215836 prefixes=40 x 2048, suffix=64, osl=64, c=64, n=800 -> /results/kvr-rf-decay",
+ "summary": {
+  "label": "rf-decay",
+  "seed": "215836",
+  "window_ms": [
+   215842580,
+   215859963
+  ],
+  "engine_hit_rate_total": 0.7152,
+  "engine_hit_rate_by_worker": {
+   "wl5z5": 0.7049,
+   "rzckw": 0.7252
+  },
+  "requests_by_worker": {
+   "wl5z5": 398,
+   "rzckw": 410
+  },
+  "router_predicted_hit_rate": 0.6918,
+  "ttft_ms": {
+   "p50": 88.8,
+   "p90": 287.1,
+   "avg": 137.3
+  },
+  "itl_ms_avg": 9.9
+ },
+ "trace": {
+  "label": "rf-decay",
+  "requests": 804,
+  "requests_by_worker": {
+   "3814927947386705": 396,
+   "7324019896719426": 408
+  },
+  "actual_hit_tokens": 0.6961,
+  "actual_hit_blocks_mean": 0.6918,
+  "prefixes_seen": 44,
+  "prefix_affinity": 0.6866,
+  "ttft_all": {
+   "n": 804,
+   "ttft_p50": 88.1,
+   "ttft_p90": 282.8,
+   "prefill_p50": 85.0,
+   "queue_p50": 2.9
+  },
+  "ttft_cache_hit": {
+   "n": 578,
+   "ttft_p50": 79.1,
+   "ttft_p90": 139.3,
+   "prefill_p50": 75.8,
+   "queue_p50": 2.8
+  },
+  "ttft_cache_miss": {
+   "n": 226,
+   "ttft_p50": 122.2,
+   "ttft_p90": 602.6,
+   "prefill_p50": 119.5,
+   "queue_p50": 3.1
+  },
+  "predicted_hit_blocks_mean": 0.6918,
+  "prediction_error_mean": 0.0,
+  "prediction_abs_error_mean": 0.0,
+  "overpredicted_by_gt_0.25": 0.0
+ }
+}
