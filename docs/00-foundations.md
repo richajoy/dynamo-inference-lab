@@ -34,10 +34,10 @@ prompt token in every layer, which later tokens attend to.
 every weight of the model, plus the KV cache of the request. With one request, each weight byte read from memory is
 used for one multiply-add. The GPU's arithmetic units mostly wait for memory.
 
-![Sequence: the client sends a 3,000-token prompt; the GPU runs prefill over all tokens in one compute-bound pass and returns token 1 (TTFT); then a decode loop reads all weights plus the KV cache to make one token per request per step (memory-bound), each gap being TPOT](../figures/diagrams/prefill-then-decode.svg)
+<img src="../figures/diagrams/prefill-then-decode.svg" width="100%" alt="Sequence: the client sends a 3,000-token prompt; the GPU runs prefill over all tokens in one compute-bound pass and returns token 1 (TTFT); then a decode loop reads all weights plus the KV cache to make one token per request per step (memory-bound), each gap being TPOT">
 
-*Prefill is limited by compute and sets TTFT; decode is limited by memory bandwidth and sets TPOT, so a change that
-helps one phase can hurt the other.*
+> <sub><i>Prefill is limited by compute and sets TTFT; decode is limited by memory bandwidth and sets TPOT, so a change that
+> helps one phase can hurt the other.</i></sub>
 
 The engine (vLLM) runs **continuous batching**: every step is one forward pass that carries one new token for every
 running request, plus, if the per-step token budget allows, a chunk of a waiting prompt. That last part matters a
@@ -156,8 +156,8 @@ chunk shares the step.
 
 ![Animated timeline: on one aggregated GPU, decode-only steps take about 17 ms but a step carrying a prompt chunk takes about 200 ms and every decoding user waits; with disaggregation the decode GPU keeps a steady rhythm while the prompt is prefilled on a separate GPU](../figures/anim-interference.svg)
 
-*One long prompt in a shared step makes every decoding user on that GPU wait ~200 ms instead of ~17 ms for their next
-token.*
+> <sub><i>One long prompt in a shared step makes every decoding user on that GPU wait ~200 ms instead of ~17 ms for their next
+> token.</i></sub>
 
 ![Gap between consecutive output tokens on one H100: decode-heavy traffic stays near 7 to 13 ms at every percentile;
 prefill-heavy traffic keeps a 17 ms median at c64 but its 90th and 99th percentile gaps jump to about 200 ms](../figures/interference-h100.png)

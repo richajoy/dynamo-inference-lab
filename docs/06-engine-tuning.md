@@ -24,10 +24,10 @@ quantities in that step:
 | **Bytes per step** | `--quantization fp8`, `--kv-cache-dtype fp8` | Fewer bytes per weight or per cached token, so memory-bound steps finish sooner; FP8 KV also doubles capacity |
 | **Tokens emitted per step** | `--speculative-config` | Several output tokens verified per weight read |
 
-![Engine knobs: chunk budget (prompt tokens per step), max-num-seqs (requests per step), FP8 weights and KV (bytes per step) and speculative decoding (tokens per step) all shape one engine step, which determines TTFT, TPOT and throughput](../figures/diagrams/engine-knobs.svg)
+<img src="../figures/diagrams/engine-knobs.svg" width="100%" alt="Engine knobs: chunk budget (prompt tokens per step), max-num-seqs (requests per step), FP8 weights and KV (bytes per step) and speculative decoding (tokens per step) all shape one engine step, which determines TTFT, TPOT and throughput">
 
-*Knobs change what goes into a step, not a metric directly, which is why one knob can improve one metric and worsen
-another.*
+> <sub><i>Knobs change what goes into a step, not a metric directly, which is why one knob can improve one metric and worsen
+> another.</i></sub>
 
 ## Setup
 

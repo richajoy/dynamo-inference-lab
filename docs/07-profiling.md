@@ -34,10 +34,10 @@ flush does not get the worker restarted.
 
 ### Capturing windows without restarting the worker
 
-![Capture sequence: the node shell starts an nsys capture on the worker pod; for each of the prefill, decode and mixed windows the AIPerf pod sends an unrecorded warm-up burst, calls start_profile, sends the recorded burst and calls stop_profile; nsys stop then writes one report per window](../figures/diagrams/nsys-capture.svg)
+<img src="../figures/diagrams/nsys-capture.svg" width="100%" alt="Capture sequence: the node shell starts an nsys capture on the worker pod; for each of the prefill, decode and mixed windows the AIPerf pod sends an unrecorded warm-up burst, calls start_profile, sends the recorded burst and calls stop_profile; nsys stop then writes one report per window">
 
-*One warmed-up worker is traced in short windows without restarts, so the traces match the benchmarked configuration
-and tracing overhead stays bounded.*
+> <sub><i>One warmed-up worker is traced in short windows without restarts, so the traces match the benchmarked configuration
+> and tracing overhead stays bounded.</i></sub>
 
 | Window | Input / output | Concurrency | Why this shape |
 |---|---|---|---|

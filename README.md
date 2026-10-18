@@ -1,4 +1,4 @@
-# Dynamo Inference Lab
+# LLM Inference Performance
 
 [![NVIDIA Dynamo 1.5.1](https://img.shields.io/badge/NVIDIA%20Dynamo-1.5.1-76B900)](https://github.com/ai-dynamo/dynamo)
 [![vLLM 0.28.0](https://img.shields.io/badge/vLLM-0.28.0-1f6feb)](https://github.com/vllm-project/vllm)
@@ -69,10 +69,10 @@ baseline; the exercise links give the conditions.
 
 ## The stack, and who manages what
 
-![The stack: the client sends requests to the Dynamo frontend (HTTP, tokenize, KV-aware router), which routes to a vLLM prefill or aggregated worker and a vLLM decode worker; the KV cache moves between workers via NIXL / UCX over NVLink or TCP; the Dynamo planner sets replica counts and the Dynamo operator creates the worker pods from the DynamoGraphDeployment](figures/diagrams/stack-overview.svg)
+<img src="figures/diagrams/stack-overview.svg" width="100%" alt="The stack: the client sends requests to the Dynamo frontend (HTTP, tokenize, KV-aware router), which routes to a vLLM prefill or aggregated worker and a vLLM decode worker; the KV cache moves between workers via NIXL / UCX over NVLink or TCP; the Dynamo planner sets replica counts and the Dynamo operator creates the worker pods from the DynamoGraphDeployment">
 
-*Every knob belongs to one box: routing to the frontend, engine flags to the workers, pool sizes to the planner, and
-the KV transport to which GPUs each pod can see.*
+> <sub><i>Every knob belongs to one box: routing to the frontend, engine flags to the workers, pool sizes to the planner, and
+> the KV transport to which GPUs each pod can see.</i></sub>
 
 | Layer | Component | Version |
 |---|---|---|
@@ -109,7 +109,7 @@ exercises 1, 3, 4 and 5. Tuning one vLLM deployment: foundations, exercises 2, 6
 You need a Linux node with an NVIDIA GPU (H100 or A100 class), driver 580 or newer and the NVIDIA container toolkit.
 
 ```bash
-git clone https://github.com/richajoy/dynamo-inference-lab && cd dynamo-inference-lab
+git clone https://github.com/richajoy/llm-inference-performance && cd llm-inference-performance
 # put a Kubernetes Secret manifest for your Hugging Face token at ~/hf-token-secret.yaml (Secret hf-token-secret, key HF_TOKEN)
 nohup ./infra/bringup.sh > ~/bringup.log 2>&1 &          # k3s, GPU Operator, monitoring, Dynamo platform, AIPerf pod
 kubectl -n dynamo-system apply -f deploy/agg-qwen3-8b.yaml

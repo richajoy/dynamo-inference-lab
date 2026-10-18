@@ -32,10 +32,10 @@ performance profiling and uses thresholds:
   as one GPU). The band's lower edge is the minimum minus one replica's GPUs, so 3 or 4 slices are legal: the planner
   could re-split the slices and briefly run on 3, but never use more than 4.
 
-![The planner loop: vLLM workers report queued prefill tokens and decode KV utilization; the planner, every 10 s, clamps to the GPU budget and patches replica counts in the DynamoGraphDeployment; the Dynamo operator deletes a pod in one pool and creates one in the other, and the freed MIG slice is bound to the new pod after a cold start](../figures/diagrams/planner-loop.svg)
+<img src="../figures/diagrams/planner-loop.svg" width="100%" alt="The planner loop: vLLM workers report queued prefill tokens and decode KV utilization; the planner, every 10 s, clamps to the GPU budget and patches replica counts in the DynamoGraphDeployment; the Dynamo operator deletes a pod in one pool and creates one in the other, and the freed MIG slice is bound to the new pod after a cold start">
 
-*The planner decides every 10 s but each move costs a 2 to 3 minute cold start, so it can follow slow traffic shifts,
-not bursts.*
+> <sub><i>The planner decides every 10 s but each move costs a 2 to 3 minute cold start, so it can follow slow traffic shifts,
+> not bursts.</i></sub>
 
 ## Setup
 

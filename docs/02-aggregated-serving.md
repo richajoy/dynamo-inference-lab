@@ -68,8 +68,8 @@ decode ([exercise 4](04-pd-disaggregation.md)).
 
 ![Animated timeline: on one aggregated GPU, decode-only steps take about 17 ms but a step carrying a prompt chunk takes about 200 ms and every decoding user waits; with disaggregation the decode GPU keeps a steady rhythm while the prompt is prefilled on a separate GPU](../figures/anim-interference.svg)
 
-*The tail gaps are decoding users waiting on other users' prompts, so the fix is how or where prompt work runs, not
-decode itself.*
+> <sub><i>The tail gaps are decoding users waiting on other users' prompts, so the fix is how or where prompt work runs, not
+> decode itself.</i></sub>
 
 KV capacity is not the limit here: 64 requests of 3,128 tokens need ~200,000 of the 388,080 available tokens. The
 tail TTFT is queueing for compute.
