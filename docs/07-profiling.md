@@ -4,11 +4,11 @@
 metrics scaled. Here we look inside the steps: trace a live Dynamo vLLM worker with Nsight Systems, see which kernels
 each phase spends its time in, and check the step times against the model from the [foundations](00-foundations.md).
 
-**What you will be able to answer after this exercise**
-- How to trace a long-running inference server in a pod, window by window, without restarting it.
-- How to tell a prefill step from a decode step in a kernel trace on Hopper.
-- Why decode time is GEMM time, and why that makes FP8 weights effective.
-- When the CPU, not the GPU, is the bottleneck.
+**What this exercise makes clear**
+- How to trace a long-running inference server inside a pod, window by window, without restarting it.
+- How prefill and decode steps look different in a kernel trace on Hopper.
+- Why decode time is GEMM time, and what that implies for FP8 weights and batching.
+- When the CPU, not the GPU, limits a step.
 
 ---
 

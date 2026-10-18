@@ -4,12 +4,12 @@
 which traffic. Change one setting at a time from the BF16 baseline of [exercise 2](02-aggregated-serving.md), measure
 three workload shapes, and explain each result with the step-time model from the [foundations](00-foundations.md).
 
-**What you will be able to answer after this exercise**
-- Which knob to reach for first for chat, for long-prompt RAG, for long-context agents, and for offline batch.
-- Why the chunk budget is a dial between two latencies, not a free win.
-- What FP8 weights and an FP8 KV cache each buy, and why they help different traffic.
+**What this exercise makes clear**
+- Which knob to reach for first for chat, long-prompt RAG, long-context agents and offline batch, and why.
+- Why the chunk budget is a dial between two latencies rather than a free win.
+- What FP8 weights and an FP8 KV cache each change in a step, and why they help different traffic.
 - Why speculative decoding helps most when the GPU is least busy.
-- How a load generator can quietly invalidate a tuning result, and how we caught it.
+- How a load generator can quietly invalidate a tuning result, and the check that exposes it.
 
 ---
 

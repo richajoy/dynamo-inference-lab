@@ -4,11 +4,11 @@
 which decision, and build a benchmark harness whose numbers can be trusted. Every later exercise reuses this
 stack and harness, changing one thing at a time.
 
-**What you will be able to answer after this exercise**
-- What runs where, and which process reads each setting you change.
-- Why a Dynamo deployment is two separate installs (a platform and a workload).
-- How an engine flag in a YAML file reaches vLLM.
-- What can make a benchmark lie, and the checks that catch it.
+**What this exercise makes clear**
+- How the stack is layered, and which process reads each setting you change: the key to explaining any number that moves.
+- Why a Dynamo deployment is two installs with different lifetimes: a platform once per cluster, a workload per experiment.
+- How an engine flag written in a YAML file reaches vLLM unchanged, and what never appears in the manifest at all.
+- The ways a benchmark can mislead, and the checks that keep its numbers honest.
 
 ---
 

@@ -5,10 +5,10 @@ traffic mix does not match it. Here we let Dynamo's planner resize the two pools
 how capacity actually moves. To give the planner more than one possible split on two GPUs, we cut them into four MIG
 slices.
 
-**What you will be able to answer after this exercise**
-- Do GPUs move between the prefill and decode pools, and how long does a move take?
-- What does MIG do to the KV transfer and to monitoring?
-- What signals does the planner use, and how can they mislead it?
+**What this exercise makes clear**
+- How capacity actually moves between the prefill and decode pools, and how long each move takes.
+- What MIG partitioning does to the KV transfer and to GPU monitoring.
+- Which signals the planner acts on, and how a slow KV transfer can mislead them.
 
 ---
 
