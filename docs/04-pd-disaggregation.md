@@ -21,20 +21,14 @@ request's KV cache must travel from one GPU to the other, and the ratio of prefi
 
 ![Animated diagram: in aggregated serving the prompt goes from the client through the Dynamo frontend to one GPU, which prefills and then streams tokens back; in disaggregated serving the prompt goes to a prefill GPU, the KV cache moves to a decode GPU over NIXL, and the decode GPU streams the tokens](../figures/anim-request-path.svg)
 
-**Purpose.** The two serving modes side by side. Blue is the prompt, orange is prefill, purple is the KV cache moving
-between GPUs, green is output tokens. **What it implies.** Disaggregation adds a step that aggregated serving does not
-have: the whole KV cache of every prompt crosses from one GPU to another before decode can start. Whether
-disaggregation pays depends on how fast that crossing is, which is what this exercise measures.
+*Disaggregation adds one step, moving the whole KV cache between GPUs, so it pays only if that move is fast.*
 
 ## Who does what in a disaggregated request
 
 ![Sequence of a disaggregated request: the client sends a 6,001-token prompt to the Dynamo frontend; the prefill leg runs on the prefill worker, which stages the KV blocks and returns kv_transfer_params; the decode leg goes to the decode worker, which pulls the 846 MiB of KV blocks with a NIXL READ (about 5 ms over NVLink, about 2,000 ms over TCP) and streams tokens 2 to N back through the frontend](../figures/diagrams/pd-request-sequence.svg)
 
-**Purpose.** One disaggregated request, step by step, with each arrow drawn from the component that acts. Orange band:
-the prefill leg. Purple band: the KV transfer. Green band: decode. **What it implies.** Dynamo orders the two legs and
-passes one small dictionary between them; vLLM stages and pulls the KV blocks; UCX picks the wire. So the transfer
-speed is not set anywhere in Dynamo's or vLLM's configuration: step 6 takes ~5 ms over NVLink or ~2,000 ms over TCP
-with the same settings, depending on which GPUs each pod can see.
+*Dynamo orders the legs, vLLM moves the KV blocks and UCX picks the wire, so transfer speed is set by which GPUs each
+pod can see, not by any serving flag.*
 
 | Layer | Component | Its job here | How it is configured |
 |---|---|---|---|
@@ -92,11 +86,8 @@ decode-side proof that prompts were not recomputed](../evidence/screenshots/card
 
 ![Animated comparison: the same 846 MiB KV cache crosses NVLink in 5.4 ms and TCP in about 2,000 ms; below, KV blocks of an idle engine are contiguous (36 descriptors) while under load they are scattered (13,500 descriptors)](../figures/anim-kv-transfer.svg)
 
-**Purpose.** The two transfer costs this exercise found, on one clock. Top: the same 846 MiB over NVLink and over TCP.
-Bottom: how a request's KV blocks sit in memory when the engine is idle and when it is under load.
-**What it implies.** The first problem is the wire: with one GPU per pod the transfer silently takes TCP and is ~370x
-slower. Once that is fixed, the second problem is the layout: scattered blocks turn one copy into ~13,500 small ones,
-each with a fixed CPU cost, and posting them, not the link, becomes the bottleneck.
+*Two costs in sequence: first the wire (TCP is ~370x slower than NVLink), then the block layout (scattered blocks
+multiply the copy list).*
 
 ![Effective KV transfer bandwidth and time per transfer, with the descriptor-posting share, for each transport
 variant](../figures/nixl-transfers.png)

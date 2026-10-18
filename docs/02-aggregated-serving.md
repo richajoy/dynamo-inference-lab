@@ -68,12 +68,8 @@ decode ([exercise 4](04-pd-disaggregation.md)).
 
 ![Animated timeline: on one aggregated GPU, decode-only steps take about 17 ms but a step carrying a prompt chunk takes about 200 ms and every decoding user waits; with disaggregation the decode GPU keeps a steady rhythm while the prompt is prefilled on a separate GPU](../figures/anim-interference.svg)
 
-**Purpose.** The interference timeline from the
-[foundations](00-foundations.md#5-mixing-prefill-and-decode-in-one-step-interference), repeated here because it
-explains the c64 numbers above: the 17 ms median gap is the decode-only step, and the ~200 ms tail gaps are steps that
-also carry a prompt chunk. **What it implies.** The decoding users are waiting on compute spent on other users'
-prompts. The fixes therefore change how prompt work is scheduled (a smaller chunk budget) or where it runs
-(disaggregation), not how decode itself runs.
+*The tail gaps are decoding users waiting on other users' prompts, so the fix is how or where prompt work runs, not
+decode itself.*
 
 KV capacity is not the limit here: 64 requests of 3,128 tokens need ~200,000 of the 388,080 available tokens. The
 tail TTFT is queueing for compute.

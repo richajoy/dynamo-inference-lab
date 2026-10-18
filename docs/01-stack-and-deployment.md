@@ -16,12 +16,7 @@ stack and harness, changing one thing at a time.
 
 ![The platform stack: host OS with the NVIDIA driver and k3s; the GPU Operator namespace (device plugin, MIG manager, DCGM exporter); the monitoring namespace (Prometheus and Grafana); the dynamo-system namespace (Dynamo operator, KAI scheduler, Grove, the DynamoGraphDeployment, frontend pod, vLLM worker pods and the AIPerf load generator)](../figures/diagrams/platform-stack.svg)
 
-**Purpose.** Everything installed on the GPU node, from the driver up to the workload. Dashed boxes are namespaces;
-box colours follow the README key (slate: platform, amber: monitoring, blue: Dynamo, green: GPU work, grey: load
-generator). Blue arrows carry benchmark traffic, amber arrows carry metrics. **What it implies.** Only the
-DynamoGraphDeployment and the pods it creates change between experiments; everything else is installed once and left
-alone, so an experiment is one YAML file applied with `kubectl`. Every metric in this repository, from DCGM's GPU
-telemetry to the frontend's and workers' own counters, reaches Grafana through the same Prometheus.
+*The platform is installed once; each experiment changes only the DynamoGraphDeployment and the pods it creates.*
 
 | Layer | Version | What it is for in this project |
 |---|---|---|
@@ -271,9 +266,7 @@ working rule from these repeats, not a statistical bound.
 
 ![Results pipeline: bench/sweep.sh in the AIPerf pod writes per-point AIPerf exports on the node; they are copied into results/ with host and time identifiers removed; figures/make_figures.py turns them into the PNG charts and the tables in the docs](../figures/diagrams/results-pipeline.svg)
 
-**Purpose.** The path from a benchmark run to a number on these pages. **What it implies.** No chart or table is typed
-by hand. Each is computed from a committed export, so a reader can rerun `make_figures.py` without a GPU and get the
-same figures, and the only change made to the raw exports is removing host and time identifiers.
+*No number is typed by hand: every chart and table is rebuilt from committed exports, without a GPU.*
 
 Every chart and table in this repository is regenerated from `results/` by
 [figures/make_figures.py](../figures/make_figures.py), so any number can be traced to one AIPerf export.

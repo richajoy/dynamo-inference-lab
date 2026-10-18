@@ -34,10 +34,8 @@ performance profiling and uses thresholds:
 
 ![The planner loop: vLLM workers report queued prefill tokens and decode KV utilization; the planner, every 10 s, clamps to the GPU budget and patches replica counts in the DynamoGraphDeployment; the Dynamo operator deletes a pod in one pool and creates one in the other, and the freed MIG slice is bound to the new pod after a cold start](../figures/diagrams/planner-loop.svg)
 
-**Purpose.** The feedback loop the planner runs, from engine metrics to new pods. **What it implies.** The loop
-decides every 10 s but acts in minutes: moving a slice between pools means deleting one pod and cold-starting another
-(2 to 3 minutes), and the planner only observes while a move is in progress. It also trusts its inputs: on a slow KV
-link, transfer back-pressure looks like decode pressure, and the loop moves capacity the wrong way.
+*The planner decides every 10 s but each move costs a 2 to 3 minute cold start, so it can follow slow traffic shifts,
+not bursts.*
 
 ## Setup
 

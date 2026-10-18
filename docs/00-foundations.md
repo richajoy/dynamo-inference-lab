@@ -36,11 +36,8 @@ used for one multiply-add. The GPU's arithmetic units mostly wait for memory.
 
 ![Sequence: the client sends a 3,000-token prompt; the GPU runs prefill over all tokens in one compute-bound pass and returns token 1 (TTFT); then a decode loop reads all weights plus the KV cache to make one token per request per step (memory-bound), each gap being TPOT](../figures/diagrams/prefill-then-decode.svg)
 
-**Purpose.** The life of one request on one GPU, split into its two phases: orange is prefill, green is decode.
-**What it implies.** The phases stress different parts of the GPU. Prefill reuses each weight across thousands of
-prompt tokens, so it is limited by arithmetic and sets TTFT. Decode reads all the weights to emit one token per
-request, so it is limited by memory bandwidth and sets TPOT. That is why the exercises report the two separately: a
-change that helps one phase can hurt the other.
+*Prefill is limited by compute and sets TTFT; decode is limited by memory bandwidth and sets TPOT, so a change that
+helps one phase can hurt the other.*
 
 The engine (vLLM) runs **continuous batching**: every step is one forward pass that carries one new token for every
 running request, plus, if the per-step token budget allows, a chunk of a waiting prompt. That last part matters a
@@ -159,11 +156,8 @@ chunk shares the step.
 
 ![Animated timeline: on one aggregated GPU, decode-only steps take about 17 ms but a step carrying a prompt chunk takes about 200 ms and every decoding user waits; with disaggregation the decode GPU keeps a steady rhythm while the prompt is prefilled on a separate GPU](../figures/anim-interference.svg)
 
-**Purpose.** Shows, to time scale, what happens to decoding users when a step also carries a prompt chunk. Top: one
-aggregated GPU. Bottom: separate prefill and decode GPUs. **What it implies.** On one GPU, a single long prompt turns
-a ~17 ms token gap into a ~200 ms gap for every user decoding on that GPU, so the TPOT tail is set by other users'
-prompts. Separating the phases removes that wait, at the price of moving the KV cache between GPUs. The chart below
-measures the effect on one GPU; [exercise 4](04-pd-disaggregation.md) tests the split.
+*One long prompt in a shared step makes every decoding user on that GPU wait ~200 ms instead of ~17 ms for their next
+token.*
 
 ![Gap between consecutive output tokens on one H100: decode-heavy traffic stays near 7 to 13 ms at every percentile;
 prefill-heavy traffic keeps a 17 ms median at c64 but its 90th and 99th percentile gaps jump to about 200 ms](../figures/interference-h100.png)
