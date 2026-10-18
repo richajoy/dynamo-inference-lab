@@ -159,4 +159,4 @@ python3 figures/make_diagrams.py    # animated explanatory diagrams (no dependen
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE). Copyright Richard Joy.
+Apache License 2.0. See [LICENSE](LICENSE).
