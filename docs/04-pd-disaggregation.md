@@ -19,6 +19,8 @@ steps carrying a big prompt chunk were ~200 ms ([foundations, section 5](00-foun
 Disaggregation removes the mixing: prefill GPUs only prefill, decode GPUs only decode. The price is that every
 request's KV cache must travel from one GPU to the other, and the ratio of prefill to decode GPUs is now fixed.
 
+![Animated diagram: in aggregated serving the prompt goes from the client through the Dynamo frontend to one GPU, which prefills and then streams tokens back; in disaggregated serving the prompt goes to a prefill GPU, the KV cache moves to a decode GPU over NIXL, and the decode GPU streams the tokens](../figures/anim-request-path.svg)
+
 ## Who does what in a disaggregated request
 
 ```mermaid
@@ -27,14 +29,21 @@ sequenceDiagram
     participant F as Dynamo frontend (router)
     participant P as Prefill worker (GPU 0)
     participant D as Decode worker (GPU 1)
-    C->>F: prompt (6,000 tokens)
+    autonumber
+    C->>F: prompt (6,001 tokens)
+    rect rgba(224, 123, 0, 0.14)
     F->>P: prefill leg: request rewritten to "prefill only, 1 token, keep the KV"
     P->>P: vLLM computes the KV for all 36 layers, stages the blocks
     P-->>F: kv_transfer_params (engine id, block ids, address)
+    end
     F->>D: decode leg, with the transfer params attached
+    rect rgba(130, 80, 223, 0.14)
     D->>P: NIXL READ of the staged blocks (846 MiB) over the transport UCX chose
     Note over P,D: cuda_ipc over NVLink: ~5 ms. tcp over the pod network: ~2,000 ms
+    end
+    rect rgba(76, 140, 0, 0.14)
     D-->>C: tokens 2..N, streamed through the frontend
+    end
 ```
 
 | Layer | Component | Its job here | How it is configured |
@@ -90,6 +99,8 @@ decode-side proof that prompts were not recomputed](../evidence/screenshots/card
 ## Results
 
 ### 1. The standard Kubernetes pod spec moves KV over TCP
+
+![Animated comparison: the same 846 MiB KV cache crosses NVLink in 5.4 ms and TCP in about 2,000 ms; below, KV blocks of an idle engine are contiguous (36 descriptors) while under load they are scattered (13,500 descriptors)](../figures/anim-kv-transfer.svg)
 
 ![Effective KV transfer bandwidth and time per transfer, with the descriptor-posting share, for each transport
 variant](../figures/nixl-transfers.png)

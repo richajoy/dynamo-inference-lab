@@ -1,5 +1,11 @@
 # Dynamo Inference Lab
 
+[![NVIDIA Dynamo 1.5.1](https://img.shields.io/badge/NVIDIA%20Dynamo-1.5.1-76B900)](https://github.com/ai-dynamo/dynamo)
+[![vLLM 0.28.0](https://img.shields.io/badge/vLLM-0.28.0-1f6feb)](https://github.com/vllm-project/vllm)
+[![Kubernetes 1.34](https://img.shields.io/badge/Kubernetes-1.34%20%28k3s%29-326CE5?logo=kubernetes&logoColor=white)](https://k3s.io)
+[![GPU H100 SXM](https://img.shields.io/badge/GPU-H100%20SXM%2080GB-76B900?logo=nvidia&logoColor=white)](docs/00-foundations.md#2-the-numbers-for-our-model-and-gpu)
+[![License Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
+
 **Serving an LLM on H100s with NVIDIA Dynamo, vLLM and Kubernetes: what limits performance, which knobs move which
 metric, and why.**
 
@@ -72,7 +78,20 @@ flowchart LR
     PL[Dynamo planner] -->|replica counts| OP[Dynamo operator]
     OP -->|creates pods from the DynamoGraphDeployment| P
     OP --> D
+    classDef client fill:#eef1f4,stroke:#57606a,color:#1f2328,stroke-width:1.5px
+    classDef dynamo fill:#dbeafe,stroke:#1f6feb,color:#0b1f44,stroke-width:1.5px
+    classDef gpu fill:#e8f5d0,stroke:#4c8c00,color:#1d3300,stroke-width:1.5px
+    classDef kv fill:#efe4ff,stroke:#8250df,color:#2d0f5c,stroke-width:1.5px
+    classDef platform fill:#e6edf3,stroke:#6e7781,color:#1f2328,stroke-width:1.5px
+    classDef obs fill:#fff4d6,stroke:#bf8700,color:#3d2a00,stroke-width:1.5px
+    class C client
+    class F,PL,OP dynamo
+    class P,D gpu
+    linkStyle 3 stroke:#8250df,stroke-width:2.5px
+    linkStyle 0,1,2 stroke:#1f6feb,stroke-width:2px
 ```
+
+![Animated diagram: in aggregated serving the prompt goes from the client through the Dynamo frontend to one GPU, which prefills and then streams tokens back; in disaggregated serving the prompt goes to a prefill GPU, the KV cache moves to a decode GPU over NIXL, and the decode GPU streams the tokens](figures/anim-request-path.svg)
 
 | Layer | Component | Version |
 |---|---|---|
@@ -121,7 +140,8 @@ Each exercise ends with the commands for its experiments. To rebuild every chart
 
 ```bash
 pip install matplotlib numpy
-python3 figures/make_figures.py
+python3 figures/make_figures.py     # data charts and tables
+python3 figures/make_diagrams.py    # animated explanatory diagrams (no dependencies)
 ```
 
 ## Repository layout
@@ -136,7 +156,7 @@ python3 figures/make_figures.py
 | `profile/` | Nsight Systems capture, summary and timeline scripts |
 | `results/` | AIPerf exports and GPU telemetry for every run (host and time identifiers removed) |
 | `evidence/` | Grafana screenshots, Nsight timelines, worker and planner logs, terminal recordings (`asciinema play <file>`) |
-| `figures/` | `make_figures.py` and the charts and tables it generates |
+| `figures/` | `make_figures.py` (data charts and tables) and `make_diagrams.py` (animated diagrams), with their outputs |
 
 ## Limitations
 
@@ -148,3 +168,7 @@ python3 figures/make_figures.py
 - At most two GPUs: disaggregation was tested only at 1 prefill : 1 decode.
 - FP8 accuracy was not evaluated.
 - Single-node only: no RDMA, no multi-node transfers.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE). Copyright Richard Joy.

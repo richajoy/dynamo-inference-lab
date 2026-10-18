@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 450" width="960" height="450" role="img">
+<style>
+  .bg { fill: #ffffff; }
+  .ink { fill: #1f2328; } .muted { fill: #57606a; } .boxink { fill: #1f2328; }
+  .line { stroke: #8c959f; }
+  .client { fill: #eef1f4; stroke: #57606a; }
+  .dynamo { fill: #dbeafe; stroke: #1f6feb; }
+  .gpu { fill: #e8f5d0; stroke: #4c8c00; }
+  .kvbox { fill: #efe4ff; stroke: #8250df; }
+  .prefill { fill: #fde7c9; stroke: #e07b00; }
+  .decode { fill: #cfe8a9; stroke: #4c8c00; }
+  .wait { fill: #ffd8d3; stroke: #cf222e; }
+  .c-blue { fill: #1f6feb; } .c-green { fill: #4c8c00; } .c-orange { fill: #e07b00; }
+  .c-purple { fill: #8250df; } .c-red { fill: #cf222e; }
+  .s-purple { stroke: #8250df; } .s-red { stroke: #cf222e; }
+  text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  .title { font-size: 17px; font-weight: 600; }
+  .label { font-size: 13px; } .small { font-size: 11.5px; } .bold { font-weight: 600; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #0d1117; }
+    .ink { fill: #e6edf3; } .muted { fill: #9198a1; }
+    .line { stroke: #6e7681; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+    .motion { display: none; }
+  }
+
+  @keyframes ta0 { 0.00% { opacity: 0.18; } 3.65% { opacity: 0.18; } 3.66% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta1 { 0.00% { opacity: 0.18; } 7.31% { opacity: 0.18; } 7.32% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta2 { 0.00% { opacity: 0.18; } 10.97% { opacity: 0.18; } 10.98% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta3 { 0.00% { opacity: 0.18; } 14.63% { opacity: 0.18; } 14.64% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta4 { 0.00% { opacity: 0.18; } 18.29% { opacity: 0.18; } 18.30% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta5 { 0.00% { opacity: 0.18; } 21.94% { opacity: 0.18; } 21.95% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta6 { 0.00% { opacity: 0.18; } 64.99% { opacity: 0.18; } 65.00% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta7 { 0.00% { opacity: 0.18; } 68.65% { opacity: 0.18; } 68.66% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta8 { 0.00% { opacity: 0.18; } 72.31% { opacity: 0.18; } 72.32% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta9 { 0.00% { opacity: 0.18; } 75.97% { opacity: 0.18; } 75.98% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta10 { 0.00% { opacity: 0.18; } 79.63% { opacity: 0.18; } 79.64% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta11 { 0.00% { opacity: 0.18; } 83.29% { opacity: 0.18; } 83.30% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta12 { 0.00% { opacity: 0.18; } 86.95% { opacity: 0.18; } 86.96% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td0 { 0.00% { opacity: 0.18; } 3.65% { opacity: 0.18; } 3.66% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td1 { 0.00% { opacity: 0.18; } 7.31% { opacity: 0.18; } 7.32% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td2 { 0.00% { opacity: 0.18; } 10.97% { opacity: 0.18; } 10.98% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td3 { 0.00% { opacity: 0.18; } 14.63% { opacity: 0.18; } 14.64% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td4 { 0.00% { opacity: 0.18; } 18.29% { opacity: 0.18; } 18.30% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td5 { 0.00% { opacity: 0.18; } 21.94% { opacity: 0.18; } 21.95% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td6 { 0.00% { opacity: 0.18; } 25.60% { opacity: 0.18; } 25.61% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td7 { 0.00% { opacity: 0.18; } 29.26% { opacity: 0.18; } 29.27% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td8 { 0.00% { opacity: 0.18; } 32.92% { opacity: 0.18; } 32.93% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td9 { 0.00% { opacity: 0.18; } 36.58% { opacity: 0.18; } 36.59% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td10 { 0.00% { opacity: 0.18; } 40.24% { opacity: 0.18; } 40.25% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td11 { 0.00% { opacity: 0.18; } 43.90% { opacity: 0.18; } 43.91% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td12 { 0.00% { opacity: 0.18; } 47.56% { opacity: 0.18; } 47.57% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td13 { 0.00% { opacity: 0.18; } 51.22% { opacity: 0.18; } 51.23% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td14 { 0.00% { opacity: 0.18; } 54.88% { opacity: 0.18; } 54.89% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td15 { 0.00% { opacity: 0.18; } 58.53% { opacity: 0.18; } 58.54% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td16 { 0.00% { opacity: 0.18; } 62.19% { opacity: 0.18; } 62.20% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td17 { 0.00% { opacity: 0.18; } 65.85% { opacity: 0.18; } 65.86% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td18 { 0.00% { opacity: 0.18; } 69.51% { opacity: 0.18; } 69.52% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td19 { 0.00% { opacity: 0.18; } 73.17% { opacity: 0.18; } 73.18% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td20 { 0.00% { opacity: 0.18; } 76.83% { opacity: 0.18; } 76.84% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td21 { 0.00% { opacity: 0.18; } 80.49% { opacity: 0.18; } 80.50% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes td22 { 0.00% { opacity: 0.18; } 84.15% { opacity: 0.18; } 84.16% { opacity: 1; } 96.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes playhead { 0.00% { transform: translate(170px, 0px); opacity: 1; } 86.96% { transform: translate(856.8px, 0px); opacity: 1; } 86.97% { opacity: 0; } 100.00% { opacity: 0; } }</style>
+<rect class="bg" x="0" y="0" width="960" height="450" rx="10"/>
+<defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8c959f"/></marker></defs>
+<text class="ink title" x="24" y="34">Why one long prompt stalls every decoding user</text>
+<text class="muted small" x="24" y="54">Measured on one H100, prefill-heavy traffic, 64 concurrent requests: most gaps between tokens are ~17 ms, one in ten is ~200 ms.</text>
+<text class="ink label bold" x="24" y="114">Aggregated</text>
+<text class="muted small" x="24" y="130">one GPU, mixed steps</text>
+<rect class="decode" x="171.0" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="199.9" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="228.8" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="257.7" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="286.6" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="315.5" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="gpu" x="344.4" y="98" width="338.0" height="36" rx="3" stroke-width="1"/>
+<rect class="prefill" x="344.4" y="98" width="338.0" height="28" rx="3" stroke-width="1"/>
+<rect class="decode" x="344.4" y="126" width="338.0" height="8" rx="2" stroke-width="1"/>
+<text class="boxink small bold" x="513.4" y="117" text-anchor="middle">prompt chunk (up to 8,192 tokens): ~200 ms</text>
+<rect class="decode" x="684.4" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="713.3" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="742.2" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="771.1" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="800.0" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="828.9" y="98" width="26.9" height="36" rx="3" stroke-width="1"/>
+<text class="ink label bold" x="24" y="294">Disaggregated</text>
+<text class="muted small" x="24" y="310">decode GPU only</text>
+<rect class="decode" x="171.0" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="199.9" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="228.8" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="257.7" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="286.6" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="315.5" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="344.4" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="373.3" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="402.2" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="431.1" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="460.0" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="488.9" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="517.8" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="546.7" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="575.6" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="604.5" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="633.4" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="662.3" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="691.2" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="720.1" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="749.0" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="777.9" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="806.8" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="decode" x="835.7" y="278" width="26.9" height="36" rx="3" stroke-width="1"/>
+<rect class="prefill" x="170" y="330" width="340.0" height="22" rx="3" stroke-width="1"/>
+<text class="boxink small" x="340.0" y="345" text-anchor="middle">the same prompt is prefilled on the prefill GPU, in parallel</text>
+<text class="muted small" x="24" y="345">prefill GPU</text>
+<text class="muted small" x="24" y="158">user tokens</text>
+<circle class="c-green" cx="196.9" cy="154" r="4.5" style="animation: ta0 8s linear infinite;"/>
+<circle class="c-green" cx="225.8" cy="154" r="4.5" style="animation: ta1 8s linear infinite;"/>
+<circle class="c-green" cx="254.7" cy="154" r="4.5" style="animation: ta2 8s linear infinite;"/>
+<circle class="c-green" cx="283.6" cy="154" r="4.5" style="animation: ta3 8s linear infinite;"/>
+<circle class="c-green" cx="312.5" cy="154" r="4.5" style="animation: ta4 8s linear infinite;"/>
+<circle class="c-green" cx="341.4" cy="154" r="4.5" style="animation: ta5 8s linear infinite;"/>
+<circle class="c-green" cx="681.4" cy="154" r="4.5" style="animation: ta6 8s linear infinite;"/>
+<circle class="c-green" cx="710.3" cy="154" r="4.5" style="animation: ta7 8s linear infinite;"/>
+<circle class="c-green" cx="739.2" cy="154" r="4.5" style="animation: ta8 8s linear infinite;"/>
+<circle class="c-green" cx="768.1" cy="154" r="4.5" style="animation: ta9 8s linear infinite;"/>
+<circle class="c-green" cx="797.0" cy="154" r="4.5" style="animation: ta10 8s linear infinite;"/>
+<circle class="c-green" cx="825.9" cy="154" r="4.5" style="animation: ta11 8s linear infinite;"/>
+<circle class="c-green" cx="854.8" cy="154" r="4.5" style="animation: ta12 8s linear infinite;"/>
+<text class="muted small" x="24" y="374">user tokens</text>
+<circle class="c-green" cx="196.9" cy="370" r="4.5" style="animation: td0 8s linear infinite;"/>
+<circle class="c-green" cx="225.8" cy="370" r="4.5" style="animation: td1 8s linear infinite;"/>
+<circle class="c-green" cx="254.7" cy="370" r="4.5" style="animation: td2 8s linear infinite;"/>
+<circle class="c-green" cx="283.6" cy="370" r="4.5" style="animation: td3 8s linear infinite;"/>
+<circle class="c-green" cx="312.5" cy="370" r="4.5" style="animation: td4 8s linear infinite;"/>
+<circle class="c-green" cx="341.4" cy="370" r="4.5" style="animation: td5 8s linear infinite;"/>
+<circle class="c-green" cx="370.3" cy="370" r="4.5" style="animation: td6 8s linear infinite;"/>
+<circle class="c-green" cx="399.2" cy="370" r="4.5" style="animation: td7 8s linear infinite;"/>
+<circle class="c-green" cx="428.1" cy="370" r="4.5" style="animation: td8 8s linear infinite;"/>
+<circle class="c-green" cx="457.0" cy="370" r="4.5" style="animation: td9 8s linear infinite;"/>
+<circle class="c-green" cx="485.9" cy="370" r="4.5" style="animation: td10 8s linear infinite;"/>
+<circle class="c-green" cx="514.8" cy="370" r="4.5" style="animation: td11 8s linear infinite;"/>
+<circle class="c-green" cx="543.7" cy="370" r="4.5" style="animation: td12 8s linear infinite;"/>
+<circle class="c-green" cx="572.6" cy="370" r="4.5" style="animation: td13 8s linear infinite;"/>
+<circle class="c-green" cx="601.5" cy="370" r="4.5" style="animation: td14 8s linear infinite;"/>
+<circle class="c-green" cx="630.4" cy="370" r="4.5" style="animation: td15 8s linear infinite;"/>
+<circle class="c-green" cx="659.3" cy="370" r="4.5" style="animation: td16 8s linear infinite;"/>
+<circle class="c-green" cx="688.2" cy="370" r="4.5" style="animation: td17 8s linear infinite;"/>
+<circle class="c-green" cx="717.1" cy="370" r="4.5" style="animation: td18 8s linear infinite;"/>
+<circle class="c-green" cx="746.0" cy="370" r="4.5" style="animation: td19 8s linear infinite;"/>
+<circle class="c-green" cx="774.9" cy="370" r="4.5" style="animation: td20 8s linear infinite;"/>
+<circle class="c-green" cx="803.8" cy="370" r="4.5" style="animation: td21 8s linear infinite;"/>
+<circle class="c-green" cx="832.7" cy="370" r="4.5" style="animation: td22 8s linear infinite;"/>
+<rect class="wait" x="343.4" y="144" width="340.0" height="20" rx="3" stroke-width="1" fill-opacity="0.6"/>
+<text class="c-red small bold" x="513.4" y="158" text-anchor="middle">every decoding user waits</text>
+<line class="line" x1="170" y1="186" x2="856.8" y2="186" stroke-width="1"/>
+<text class="muted small" x="170.0" y="202" text-anchor="middle">0 ms</text>
+<text class="muted small" x="340.0" y="202" text-anchor="middle">100 ms</text>
+<text class="muted small" x="510.0" y="202" text-anchor="middle">200 ms</text>
+<text class="muted small" x="680.0" y="202" text-anchor="middle">300 ms</text>
+<text class="muted small" x="850.0" y="202" text-anchor="middle">400 ms</text>
+<line class="s-red motion" x1="0" y1="90" x2="0" y2="380" stroke-width="1.5" style="animation: playhead 8s linear infinite;"/>
+<text class="muted small" x="24" y="430">Step lengths drawn to scale. Green: decode-only step. Orange: prompt work. Each green dot is one user getting a token.</text>
+</svg>

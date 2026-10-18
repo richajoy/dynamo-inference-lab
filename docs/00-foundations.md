@@ -38,12 +38,16 @@ used for one multiply-add. The GPU's arithmetic units mostly wait for memory.
 sequenceDiagram
     participant C as Client
     participant G as GPU (vLLM engine)
+    rect rgba(224, 123, 0, 0.14)
     C->>G: prompt (3,000 tokens)
     Note over G: PREFILL: all 3,000 tokens in one pass<br/>weights reused 3,000 times: compute-bound<br/>writes K and V for every token
     G-->>C: token 1 (TTFT)
+    end
+    rect rgba(76, 140, 0, 0.14)
     loop DECODE: one step per output token
         Note over G: read ALL weights + the KV cache<br/>to make ONE token per request: memory-bound
         G-->>C: token n (gap = TPOT)
+    end
     end
 ```
 
@@ -161,6 +165,8 @@ Arithmetic for a full 8,192-token chunk: ~121 TFLOP. That is ~123 ms at peak, or
 large prefill reached in our trace ([exercise 7](07-profiling.md)). A decode-only step at the same moment would take
 ~17 ms. So we expect every decoding request on that GPU to wait roughly 190 ms for its next token whenever a big prompt
 chunk shares the step.
+
+![Animated timeline: on one aggregated GPU, decode-only steps take about 17 ms but a step carrying a prompt chunk takes about 200 ms and every decoding user waits; with disaggregation the decode GPU keeps a steady rhythm while the prompt is prefilled on a separate GPU](../figures/anim-interference.svg)
 
 ![Gap between consecutive output tokens on one H100: decode-heavy traffic stays near 7 to 13 ms at every percentile;
 prefill-heavy traffic keeps a 17 ms median at c64 but its 90th and 99th percentile gaps jump to about 200 ms](../figures/interference-h100.png)

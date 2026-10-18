@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" width="960" height="500" role="img">
+<style>
+  .bg { fill: #ffffff; }
+  .ink { fill: #1f2328; } .muted { fill: #57606a; } .boxink { fill: #1f2328; }
+  .line { stroke: #8c959f; }
+  .client { fill: #eef1f4; stroke: #57606a; }
+  .dynamo { fill: #dbeafe; stroke: #1f6feb; }
+  .gpu { fill: #e8f5d0; stroke: #4c8c00; }
+  .kvbox { fill: #efe4ff; stroke: #8250df; }
+  .prefill { fill: #fde7c9; stroke: #e07b00; }
+  .decode { fill: #cfe8a9; stroke: #4c8c00; }
+  .wait { fill: #ffd8d3; stroke: #cf222e; }
+  .c-blue { fill: #1f6feb; } .c-green { fill: #4c8c00; } .c-orange { fill: #e07b00; }
+  .c-purple { fill: #8250df; } .c-red { fill: #cf222e; }
+  .s-purple { stroke: #8250df; } .s-red { stroke: #cf222e; }
+  text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  .title { font-size: 17px; font-weight: 600; }
+  .label { font-size: 13px; } .small { font-size: 11.5px; } .bold { font-weight: 600; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #0d1117; }
+    .ink { fill: #e6edf3; } .muted { fill: #9198a1; }
+    .line { stroke: #6e7681; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+    .motion { display: none; }
+  }
+
+  @keyframes bar0 { 0.00% { transform: scaleX(0); } 0.40% { transform: scaleX(1); } 96.00% { transform: scaleX(1); } 100.00% { transform: scaleX(0); } }
+  @keyframes bar1 { 0.00% { transform: scaleX(0); } 80.00% { transform: scaleX(1); } 96.00% { transform: scaleX(1); } 100.00% { transform: scaleX(0); } }
+  @keyframes blk0 { 0.00% { opacity: 0.35; } 15.00% { opacity: 0.35; } 20.00% { opacity: 1; } 92.00% { opacity: 1; } 100.00% { opacity: 0.35; } }
+  @keyframes blk1 { 0.00% { opacity: 0.35; } 50.00% { opacity: 0.35; } 55.00% { opacity: 1; } 92.00% { opacity: 1; } 100.00% { opacity: 0.35; } }</style>
+<rect class="bg" x="0" y="0" width="960" height="500" rx="10"/>
+<defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8c959f"/></marker></defs>
+<text class="ink title" x="24" y="34">Moving one KV cache (846 MiB) from the prefill GPU to the decode GPU</text>
+<text class="muted small" x="24" y="54">Both bars run on the same clock. Measured on 2x H100: the link UCX chooses decides everything.</text>
+<text class="ink label bold" x="24" y="114">CUDA IPC over NVLink</text>
+<text class="muted small" x="24" y="130">both GPUs visible to the pods</text>
+<rect class="client" x="260" y="96" width="600" height="30" rx="5" stroke-width="1"/>
+<rect class="c-green" x="260" y="96" width="600" height="30" rx="5" style="transform-origin: 260px 96px; animation: bar0 6s linear infinite;"/>
+<text class="ink label bold" x="874" y="116">5.4 ms</text>
+<text class="ink label bold" x="24" y="184">TCP over the pod network</text>
+<text class="muted small" x="24" y="200">one GPU per pod (the default)</text>
+<rect class="client" x="260" y="166" width="600" height="30" rx="5" stroke-width="1"/>
+<rect class="c-red" x="260" y="166" width="600" height="30" rx="5" style="transform-origin: 260px 166px; animation: bar1 6s linear infinite;"/>
+<text class="ink label bold" x="874" y="186">~2,000 ms</text>
+<text class="c-purple label bold" x="260" y="246">About 370x apart. Over TCP a prompt-heavy service topped out near 1 request/s.</text>
+<text class="ink label bold" x="24" y="292">Once the link is fast: how the KV blocks are laid out decides the copy list</text>
+<text class="ink small bold" x="24" y="316">Idle engine</text>
+<text class="muted small" x="24" y="332">a new request gets adjacent free blocks</text>
+<rect class="client" x="24" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="43" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="62" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="81" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="100" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="119" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="138" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="157" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="176" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="195" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="214" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="233" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="252" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="271" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="290" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="309" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="328" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="347" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="366" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="385" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="404" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="423" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="442" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="461" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="24" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="43" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="62" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="81" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="100" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="119" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="138" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="157" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="176" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="195" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="214" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="233" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="252" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="271" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="kvbox" x="290" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk0 6s linear infinite;"/>
+<rect class="client" x="309" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="328" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="347" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="366" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="385" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="404" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="423" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="442" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="461" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="24" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="43" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="62" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="81" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="100" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="119" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="138" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="157" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="176" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="195" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="214" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="233" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="252" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="271" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="290" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="309" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="328" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="347" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="366" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="385" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="404" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="423" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="442" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="461" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<text class="c-purple small bold" x="24" y="424">36 descriptors (one span per layer)</text>
+<text class="ink small bold" x="494" y="316">Under load</text>
+<text class="muted small" x="494" y="332">free blocks are scattered</text>
+<rect class="client" x="494" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="513" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="532" y="344" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="551" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="570" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="589" y="344" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="kvbox" x="608" y="344" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="kvbox" x="627" y="344" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="646" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="665" y="344" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="684" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="703" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="722" y="344" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="741" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="760" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="779" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="798" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="817" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="836" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="855" y="344" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="874" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="893" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="912" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="931" y="344" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="494" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="513" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="532" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="551" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="570" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="589" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="608" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="627" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="646" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="665" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="684" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="703" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="722" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="741" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="760" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="779" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="798" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="817" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="836" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="855" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="874" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="893" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="912" y="363" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="931" y="363" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="494" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="513" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="532" y="382" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="551" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="570" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="589" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="608" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="627" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="646" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="665" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="684" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="703" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="722" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="741" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="760" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="kvbox" x="779" y="382" width="16" height="16" rx="2" stroke-width="1" style="animation: blk1 6s linear infinite;"/>
+<rect class="client" x="798" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="817" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="836" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="855" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="874" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="893" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="912" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<rect class="client" x="931" y="382" width="16" height="16" rx="2" stroke-width="1"/>
+<text class="c-purple small bold" x="494" y="424">13,500 descriptors (one per block per layer)</text>
+<text class="muted small" x="24" y="470">Each descriptor costs ~3.8 us of CPU work to post. 13,500 of them took more than half of a ~93 ms transfer on the fast link.</text>
+</svg>
