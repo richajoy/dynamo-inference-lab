@@ -196,5 +196,5 @@
 <rect class="client" x="912" y="382" width="16" height="16" rx="2" stroke-width="1"/>
 <rect class="client" x="931" y="382" width="16" height="16" rx="2" stroke-width="1"/>
 <text class="c-purple small bold" x="494" y="424">13,500 descriptors (one per block per layer)</text>
-<text class="muted small" x="24" y="470">Each descriptor costs ~3.8 us of CPU work to post. 13,500 of them took more than half of a ~93 ms transfer on the fast link.</text>
+<text class="muted small" x="24" y="470">Each descriptor costs ~3.8 μs of CPU work to post. 13,500 of them took more than half of a ~93 ms transfer on the fast link.</text>
 </svg>

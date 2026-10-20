@@ -131,9 +131,9 @@ descriptors** for 36 layers. Under load, requests start and finish constantly, t
 of a request's blocks are adjacent, and the count becomes layers x blocks: **36 x 375 = 13,500** for a 6,000-token
 prompt.
 
-**Why that is slow.** Each descriptor costs a roughly fixed amount of CPU work to build and post, about **3.8 us** here
+**Why that is slow.** Each descriptor costs a roughly fixed amount of CPU work to build and post, about **3.8 μs** here
 (51 ms over 13,442 descriptors). Each span is one block of one layer, just 64 KiB. Posting alone then caps the
-transfer at 64 KiB / 3.8 us, ~17 GB/s, before any byte moves; we measured 9.6 GB/s on a link that does 164.
+transfer at 64 KiB / 3.8 μs, ~17 GB/s, before any byte moves; we measured 9.6 GB/s on a link that does 164.
 
 ```
 transfer time  ~  fixed setup  +  descriptors x posting cost  +  bytes / link bandwidth

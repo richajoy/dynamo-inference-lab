@@ -274,7 +274,7 @@ def kv_transfer():
         body.append(f'<text class="c-purple small bold" x="{x0}" y="{yb + 124}">{ndesc}</text>')
         css += keyframes(f"blk{p}", [(0, "opacity: 0.35;"), (15 + p * 35, "opacity: 0.35;"), (20 + p * 35, "opacity: 1;"),
                                      (92, "opacity: 1;"), (100, "opacity: 0.35;")])
-    body.append('<text class="muted small" x="24" y="470">Each descriptor costs ~3.8 us of CPU work to post. 13,500 of them '
+    body.append('<text class="muted small" x="24" y="470">Each descriptor costs ~3.8 μs of CPU work to post. 13,500 of them '
                 'took more than half of a ~93 ms transfer on the fast link.</text>')
     return svg(W, H, "\n".join(body), css)
 
@@ -282,5 +282,5 @@ def kv_transfer():
 if __name__ == "__main__":
     for name, fn in (("anim-request-path", request_path), ("anim-interference", interference), ("anim-kv-transfer", kv_transfer)):
         p = OUT / f"{name}.svg"
-        p.write_text(fn())
+        p.write_text(fn(), encoding='utf-8')
         print("wrote", p.relative_to(OUT.parent), f"{p.stat().st_size / 1024:.1f} KB")
