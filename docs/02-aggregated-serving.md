@@ -1,10 +1,10 @@
-# Exercise 2: Aggregated serving on one H100, from one user to sixty-four
+# Part 2: Aggregated serving on one H100, from one user to sixty-four
 
 **Goal.** Measure what one H100 running one vLLM engine delivers for different kinds of traffic as load rises, and
 explain every curve with the step-time model from the [foundations](00-foundations.md). This run is the baseline
-every later exercise is compared with.
+every later part is compared with.
 
-**Questions this exercise clarifies**
+**Questions this part clarifies**
 - Why per-GPU throughput rises ~43x from 1 to 64 concurrent users while each user's stream slows by only ~30%.
 - Why long prompts hurt everyone else's stream, and by how much.
 - Where the floor on time-to-first-token comes from (it is not the GPU).
@@ -51,7 +51,7 @@ serving systems batch, and why concurrency is the first knob.
 ### Prefill-heavy: interference and queueing
 
 - **One user:** TTFT 79 ms. A 3,000-token prompt is ~44 TFLOP; the GPU spends ~70 ms on it (trace in
-  [exercise 7](07-profiling.md)), and the remaining ~9 ms is software overhead. Then 127 tokens at 7.0 ms each.
+  [Part 7](07-profiling.md)), and the remaining ~9 ms is software overhead. Then 127 tokens at 7.0 ms each.
 - **16 users:** TTFT p50 591 ms, TPOT 13.8 ms. With an 8,192-token budget a single engine step can carry about 2.7 of
   these prompts. Our explanation, consistent with the numbers but not traced: they all get their first token when that long
   step ends, so the median TTFT reflects batching prompts together, not a full GPU.
@@ -63,8 +63,8 @@ splits it: the median gap between tokens is 17 ms, within 3% of the decode-only 
 with ~3,000-token contexts, while one gap in ten is ~200 ms, about the length of a step that also carries an 8,192-token prompt chunk.
 **61% of the TPOT at c64 lies above the median gap**, which we attribute to decoding users waiting for other users'
 prompts. The fix options are the
-subject of later exercises: smaller chunks ([exercise 6](06-engine-tuning.md)), or separate GPUs for prefill and
-decode ([exercise 4](04-pd-disaggregation.md)).
+subject of later parts: smaller chunks ([Part 6](06-engine-tuning.md)), or separate GPUs for prefill and
+decode ([Part 4](04-pd-disaggregation.md)).
 
 ![Animated timeline: on one aggregated GPU, decode-only steps take about 17 ms but a step carrying a prompt chunk takes about 200 ms and every decoding user waits; with disaggregation the decode GPU keeps a steady rhythm while the prompt is prefilled on a separate GPU](../figures/anim-interference.svg)
 
@@ -81,7 +81,7 @@ this GPU or the A100. This minimum covers HTTP handling, tokenization, the Dynam
 scheduling, the CPU-launched prefill step and the first decode step (AIPerf saw the first two tokens arrive together). We
 attribute it by elimination, not by profiling each hop. The practical point: **for short prompts, the serving stack,
 not the GPU, sets the minimum TTFT.** It is a floor, not a constant added to every request: a 3,000-token prompt's
-79 ms TTFT is ~70 ms of GPU work plus ~9 ms. It also caps what prefix caching can do for TTFT ([exercise 3](03-kv-aware-routing.md)).
+79 ms TTFT is ~70 ms of GPU work plus ~9 ms. It also caps what prefix caching can do for TTFT ([Part 3](03-kv-aware-routing.md)).
 
 ### The throughput-interactivity frontier
 
@@ -95,7 +95,7 @@ per GPU, right is a faster stream per user. A line that sits entirely up and to 
 **What it shows**
 - Moving along a line is the concurrency dial: from c1 to c64 the H100 BF16 line gains 43x throughput for 31% of
   per-user speed. There is no free point; you choose one.
-- Moving to a different line is a configuration change. The tuned H100 lines ([exercise 6](06-engine-tuning.md))
+- Moving to a different line is a configuration change. The tuned H100 lines ([Part 6](06-engine-tuning.md))
   sit above and to the right of plain BF16; the A100 line sits below and to the left of everything.
 
 ### Energy per token
@@ -180,8 +180,8 @@ The H100 has ~3x the prefill rate and 3x the KV capacity, so 64 requests sit bel
 
 | Your traffic | What sets its performance on one GPU | First lever |
 |---|---|---|
-| Chat, code generation (short prompts, long answers) | Bandwidth: TPOT follows bytes per step. Throughput follows batch size | Run at the highest concurrency your TPOT target allows; then cut bytes per step (FP8, [exercise 6](06-engine-tuning.md)) |
-| RAG, summarization (long prompts, short answers) | Compute for prefill, plus interference on everyone's TPOT | Chunk budget or disaggregation ([exercise 6](06-engine-tuning.md), [exercise 4](04-pd-disaggregation.md)) |
+| Chat, code generation (short prompts, long answers) | Bandwidth: TPOT follows bytes per step. Throughput follows batch size | Run at the highest concurrency your TPOT target allows; then cut bytes per step (FP8, [Part 6](06-engine-tuning.md)) |
+| RAG, summarization (long prompts, short answers) | Compute for prefill, plus interference on everyone's TPOT | Chunk budget or disaggregation ([Part 6](06-engine-tuning.md), [Part 4](04-pd-disaggregation.md)) |
 | Long-context agents | KV capacity first, then bandwidth (long contexts make KV reads dominate) | FP8 KV cache, admission limits matched to KV capacity |
 | Batch or offline | Throughput per joule | Maximum concurrency the KV cache allows |
 
@@ -208,4 +208,4 @@ kubectl -n dynamo-system exec -it aiperf -- bash /tmp/sweep.sh h100-agg-baseline
 python3 figures/make_figures.py      # rebuilds every chart and table from results/
 ```
 
-Next: [Exercise 3, KV-aware routing](03-kv-aware-routing.md).
+Next: [Part 3, KV-aware routing](03-kv-aware-routing.md).

@@ -1,10 +1,10 @@
-# Exercise 7: Where the GPU time goes, with Nsight Systems inside Kubernetes
+# Part 7: Where the GPU time goes, with Nsight Systems inside Kubernetes
 
-**Goal.** The earlier exercises inferred *that* prefill is compute-bound and decode is weight streaming, from how
+**Goal.** The earlier parts inferred *that* prefill is compute-bound and decode is weight streaming, from how
 metrics scaled. Here we look inside the steps: trace a live Dynamo vLLM worker with Nsight Systems, see which kernels
 each phase spends its time in, and check the step times against the model from the [foundations](00-foundations.md).
 
-**Questions this exercise clarifies**
+**Questions this part clarifies**
 - How to trace a long-running inference server in a pod, window by window, without restarting it.
 - How to tell a prefill step from a decode step in a kernel trace on Hopper.
 - Why decode time is GEMM time, and why that makes FP8 weights effective.
@@ -16,7 +16,7 @@ each phase spends its time in, and check the step times against the model from t
 
 | Item | Value |
 |---|---|
-| Deployment | [deploy/prof-agg-qwen3-8b.yaml](../deploy/prof-agg-qwen3-8b.yaml): the same name, model and engine flags as the exercise 2 baseline, so traces map onto the benchmark numbers |
+| Deployment | [deploy/prof-agg-qwen3-8b.yaml](../deploy/prof-agg-qwen3-8b.yaml): the same name, model and engine flags as the Part 2 baseline, so traces map onto the benchmark numbers |
 | GPU, model | One H100, Qwen3-8B BF16, chunk budget 8,192 (the default on this GPU) |
 | Profiler hook | `--profiler-config '{"profiler":"cuda"}'`: Dynamo's `POST :9090/engine/control/start_profile` makes vLLM call `cudaProfilerStart`; `stop_profile` calls `cudaProfilerStop` |
 | Nsight Systems | 2026.3, installed on the host and mounted read-only into the pod (the serving image has none, and the host OS package was too old for the container's CUDA 13) |
@@ -74,7 +74,7 @@ tracks the GEMM's N dimension, which in decode is the batch size. `coopB` is a c
   decode steps. A prefill GEMM is expensive per call; decode GEMMs win on count.
 - **Decode time is GEMM time.** In the decode window GEMMs take ~85% of GPU time and attention ~8%. With short
   contexts, reading the KV cache is small next to reading 15 GB of weights. That is consistent with FP8 weights (about
-  46% fewer weight bytes) cutting decode TPOT by ~29% ([exercise 6](06-engine-tuning.md); an inference across
+  46% fewer weight bytes) cutting decode TPOT by ~29% ([Part 6](06-engine-tuning.md); an inference across
   experiments, since this profile is BF16), and why attention optimizations would matter mainly for
   long contexts.
 - **The mixed window carries the most attention:** long prompts make prefill attention expensive (it grows with the
@@ -106,7 +106,7 @@ decode steps](../evidence/nsys/nsys-window2.png)
 
 The first step carries a 259-token prompt. Its CPU range is ~22 ms, yet the kernel lane is sparse: for a small,
 non-graph prefill the GPU waits while the CPU launches kernels one by one. **CPU launch overhead matters for short
-prompts, not long ones**, and it is part of the ~43 ms TTFT floor seen in [exercise 2](02-aggregated-serving.md#the-43-ms-floor-on-time-to-first-token).
+prompts, not long ones**, and it contributes to the ~43 ms TTFT floor seen in [Part 2](02-aggregated-serving.md#the-43-ms-floor-on-time-to-first-token).
 Node-mode tracing adds launch cost, so the effect may be overstated here.
 
 ### Timeline: steady decode in the mixed window

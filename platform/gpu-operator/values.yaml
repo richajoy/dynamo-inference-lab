@@ -43,7 +43,7 @@ migManager:
 gfd:
   enabled: true
 
-# MIG exposure when migManager applies a layout (exercise 5).
+# MIG exposure when migManager applies a layout (Part 5).
 # mixed => resources like nvidia.com/mig-3g.20gb ; single => all slices as nvidia.com/gpu
 mig:
   strategy: mixed

@@ -1,4 +1,4 @@
-# Profiling variant of agg-qwen3-8b (exercise 7): SAME name, model and engine flags as deploy/agg-qwen3-8b.yaml, so the
+# Profiling variant of agg-qwen3-8b (Part 7): SAME name, model and engine flags as deploy/agg-qwen3-8b.yaml, so the
 # trace matches the baseline sweep. The only differences:
 #   1. The worker runs under `nsys launch` (session "vllm"): the app runs normally and NOTHING is recorded.
 #      profile/nsys-capture.sh arms it once (`nsys start -c cudaProfilerApi --capture-range-end=repeat`), then each

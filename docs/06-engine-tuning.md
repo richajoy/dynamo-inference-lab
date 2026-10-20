@@ -1,10 +1,10 @@
-# Exercise 6: Tuning the engine on one H100
+# Part 6: Tuning the engine on one H100
 
 **Goal.** Before adding GPUs, find out which vLLM engine settings move the metrics users feel, by how much, and for
-which traffic. Change one setting at a time from the BF16 baseline of [exercise 2](02-aggregated-serving.md), measure
+which traffic. Change one setting at a time from the BF16 baseline of [Part 2](02-aggregated-serving.md), measure
 three workload shapes, and explain each result with the step-time model from the [foundations](00-foundations.md).
 
-**Questions this exercise clarifies**
+**Questions this part clarifies**
 - Which knob to reach for first for chat, for long-prompt RAG, for long-context agents, and for offline batch.
 - Why the chunk budget is a dial between two latencies, not a free win.
 - What FP8 weights and an FP8 KV cache each buy, and why they help different traffic.
@@ -52,9 +52,9 @@ quantities in that step:
 
 ## Before the results: two kinds of noise
 
-**Which baseline.** The BF16 baseline in this exercise is a second run of the exercise 2 deployment, made alongside
-the variants, so its numbers differ slightly from exercise 2's (for example prefill-heavy c16 TTFT p50 639 against
-591 ms). The speculative-decoding comparison uses the exercise 2 run, because it has the c1 and c4 points.
+**Which baseline.** The BF16 baseline here is a second run of the Part 2 deployment, made alongside the variants,
+so its numbers differ slightly from those in Part 2 (for example prefill-heavy c16 TTFT p50 639 against 591 ms). The
+speculative-decoding comparison uses the original Part 2 run, because it has the c1 and c4 points.
 
 **Run-to-run noise.** Two variants happen to be repeats of the baseline: chunk 8192 (the default) and 128 sequences
 at c16 and c64 (where at most 64 requests are ever in flight). Requests/s and TPOT agreed within 1 to 2%; median
@@ -62,7 +62,7 @@ TTFT differed by up to 5% for the chunk-8192 repeat and up to 20% for the 128-se
 ~20%, as noise.
 
 **The load generator can be the bottleneck.** Variants ran in pairs from one shared AIPerf pod. The closed-loop check
-(requests/s x mean latency / concurrency, [exercise 1](01-stack-and-deployment.md#validity-checks-each-added-after-a-run-fooled-us))
+(requests/s x mean latency / concurrency, [Part 1](01-stack-and-deployment.md#validity-checks-each-added-after-a-run-fooled-us))
 showed that some fast variants did not get the concurrency they asked for:
 
 | Run, shape, c64 | requests/s | mean E2E | requests actually in flight |
@@ -278,7 +278,7 @@ second at concurrency 16, 64 and 128, for the baseline, 128 sequences, and the c
   alone. FP8 KV is what lets 128 long requests fit.
 
 One tuned H100 at prefill-heavy c64 (12.95 requests/s) matched disaggregated serving over NVLink on *two* H100s
-(12.84, [exercise 4](04-pd-disaggregation.md)). That is not a controlled comparison (FP8 against BF16), but it puts the
+(12.84, [Part 4](04-pd-disaggregation.md)). That is not a controlled comparison (FP8 against BF16), but it puts the
 two options in proportion: one tuned GPU delivered the throughput that two untuned GPUs delivered as a 1:1 prefill/decode
 pair. P/D still streamed faster (TPOT 12.7 against 22.9 ms), and two untuned aggregated GPUs reached 16.8 requests/s.
 
@@ -350,4 +350,4 @@ python3 figures/make_figures.py
 
 Check the "avg in flight" column for **(!)** before trusting any requests/s.
 
-Next: [Exercise 7, where the GPU time goes](07-profiling.md).
+Next: [Part 7, where the GPU time goes](07-profiling.md).

@@ -1,10 +1,10 @@
-# Exercise 3: KV-aware routing, sending each request to the GPU that already holds its prefix
+# Part 3: KV-aware routing, sending each request to the GPU that already holds its prefix
 
 **Goal.** When several identical workers serve one model, decide whether routing by cache contents beats
 round-robin, find which router settings matter, and work out when a better cache hit rate actually shows up as lower
 latency.
 
-**Questions this exercise clarifies**
+**Questions this part clarifies**
 - How Dynamo's KV router knows what each GPU has cached, and how it picks a worker.
 - Why its default settings barely beat round-robin on our workload, and the one setting that fixes it.
 - Whether you can trust the router's own hit-rate metric, with and without cache events from the workers.
@@ -215,7 +215,7 @@ every `kv` arm, and we fell back to comparing aggregate counters.
 ### Why hits stopped mattering for median TTFT on the H100
 
 On an H100, prefilling a 2,000-token prompt of a 4B model takes ~20 ms. Even a short prompt never got its first
-token in under ~43 ms in this stack ([exercise 2](02-aggregated-serving.md#the-43-ms-floor-on-time-to-first-token)).
+token in under ~43 ms in this stack ([Part 2](02-aggregated-serving.md#the-43-ms-floor-on-time-to-first-token)).
 The extra prefill of a miss largely fit inside that minimum, so the client-side median stayed on the floor whichever
 worker served the request. The benefit moved
 from latency to capacity: ~35 percentage points fewer prompt tokens prefilled, and ITL 13% lower (6.54 to 5.71 ms),
@@ -311,4 +311,4 @@ kubectl -n dynamo-system apply -f deploy/kvr-qwen3-4b.yaml        # 2 workers; o
 python3 figures/make_figures.py
 ```
 
-Next: [Exercise 4, prefill/decode disaggregation](04-pd-disaggregation.md).
+Next: [Part 4, prefill/decode disaggregation](04-pd-disaggregation.md).

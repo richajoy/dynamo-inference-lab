@@ -1,10 +1,10 @@
-# Exercise 1: The stack, how it is deployed, and how we measure it
+# Part 1: The stack, how it is deployed, and how we measure it
 
 **Goal.** Build a Kubernetes inference stack around NVIDIA Dynamo and vLLM on a GPU node, know which component owns
-which decision, and build a benchmark harness whose numbers can be trusted. Every later exercise reuses this
+which decision, and build a benchmark harness whose numbers can be trusted. Every later part reuses this
 stack and harness, changing one thing at a time.
 
-**Questions this exercise clarifies**
+**Questions this part clarifies**
 - What runs where, and which process reads each setting you change.
 - Why a Dynamo deployment is two separate installs (a platform and a workload).
 - How an engine flag in a YAML file reaches vLLM.
@@ -27,7 +27,7 @@ stack and harness, changing one thing at a time.
 | Dynamo platform | chart 1.5.1 | Dynamo operator and CRDs, plus the bundled KAI scheduler v0.17 and Grove |
 | Serving image | `nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.5.1` | Dynamo frontend and worker code with vLLM 0.28.0 inside |
 | Load generator | AIPerf 0.12.0 | Closed-loop benchmark client, run inside the cluster |
-| Profiler | Nsight Systems 2026.3 | Kernel timelines ([exercise 7](07-profiling.md)) |
+| Profiler | Nsight Systems 2026.3 | Kernel timelines ([Part 7](07-profiling.md)) |
 
 Two things that are *not* installed: **etcd and NATS**. In Dynamo 1.5.1 on Kubernetes, components discover each other
 through the Kubernetes API, requests travel over TCP, and KV events over ZMQ. The platform values set
@@ -123,7 +123,7 @@ router-advertisement flags), then hands the rest to vLLM's parser and builds the
 - A misspelled flag makes the worker exit at startup. The operator does not validate `args`, so the symptom is a
   crash-looping pod, not an API error.
 
-[exercise 6](06-engine-tuning.md) uses this directly: [deploy/gen-variant.py](../deploy/gen-variant.py) copies the
+[Part 6](06-engine-tuning.md) uses this directly: [deploy/gen-variant.py](../deploy/gen-variant.py) copies the
 baseline DGD and appends only the flags under test, so each variant differs from the baseline in exactly those flags.
 
 ### What is not in the DGD
@@ -175,7 +175,7 @@ default lacks (`SM_ACTIVE`, `SM_OCCUPANCY`, `PIPE_TENSOR_ACTIVE`, `DRAM_ACTIVE`)
 2. **`GPU_UTIL` is not utilization.** `DCGM_FI_DEV_GPU_UTIL` is the share of time *any* kernel is running. A single
    tiny kernel counts as 100%. It read 98 to 100% at every load level in this project, from one request to 64. Use
    `SM_ACTIVE`, `PIPE_TENSOR_ACTIVE` and `DRAM_ACTIVE` for saturation, or better, throughput and power. On MIG slices
-   `GPU_UTIL` reports no data at all ([exercise 5](05-autoscaling-and-mig.md)).
+   `GPU_UTIL` reports no data at all ([Part 5](05-autoscaling-and-mig.md)).
 
 DCGM's profiling fields and Nsight Compute use the same hardware counters and cannot run at the same time.
 
@@ -220,10 +220,10 @@ which is also the check that the loop really was full (below).
 Every request goes to `/v1/completions` (raw prompt, so the chat template cannot switch on Qwen3's thinking mode)
 with `max_tokens = min_tokens = output length` and `ignore_eos: true`, so every request produces exactly the intended
 number of tokens. Without this, a model that stops early makes a run look faster. The cost: generated text drifts
-into repetition, which flatters speculative decoding ([exercise 6](06-engine-tuning.md)).
+into repetition, which flatters speculative decoding ([Part 6](06-engine-tuning.md)).
 
 Prompts are synthetic and unique, so the prefix cache never hits in these sweeps. Prefix reuse has its own harness
-([exercise 3](03-kv-aware-routing.md)).
+([Part 3](03-kv-aware-routing.md)).
 
 ### Sample sizes and what p99 means
 
@@ -256,7 +256,7 @@ So low-concurrency p99s are single requests. We report p50 and p90 alongside.
 ### Repeatability
 
 We ran each configuration once, but three runs turned out to repeat the BF16 baseline: a later re-run of the baseline
-itself (used as the reference in [exercise 6](06-engine-tuning.md)), a variant that set the chunk budget to its default
+itself (used as the reference in [Part 6](06-engine-tuning.md)), a variant that set the chunk budget to its default
 value, and a 128-sequence variant at concurrencies where that limit is never reached. Requests/s and TPOT agreed
 within 1 to 2% across all of them; median TTFT varied by up to ~8% for the baseline re-run and up to ~20% for the
 128-sequence pseudo-repeat. We treat differences under ~3% in throughput or TPOT, and under ~20% in median TTFT, as noise. That is a
@@ -290,4 +290,4 @@ Step by step instead of one script: `./infra/k3s/install.sh preflight | k3s | ru
 verify`, then `./platform/monitoring/install.sh all`, then `./platform/dynamo/install.sh all`, then
 `kubectl apply -f bench/aiperf-pod.yaml`.
 
-Next: [Exercise 2, aggregated serving on one H100](02-aggregated-serving.md).
+Next: [Part 2, aggregated serving on one H100](02-aggregated-serving.md).

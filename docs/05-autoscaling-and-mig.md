@@ -1,11 +1,11 @@
-# Exercise 5: Autoscaling between prefill and decode pools, on MIG slices
+# Part 5: Autoscaling between prefill and decode pools, on MIG slices
 
-**Goal.** [Exercise 4](04-pd-disaggregation.md) showed that a fixed prefill:decode split loses throughput whenever the
+**Goal.** [Part 4](04-pd-disaggregation.md) showed that a fixed prefill:decode split loses throughput whenever the
 traffic mix does not match it. Here we let Dynamo's planner resize the two pools while the traffic shifts, and watch
 how capacity actually moves. To give the planner more than one possible split on two GPUs, we cut them into four MIG
 slices.
 
-**Questions this exercise clarifies**
+**Questions this part clarifies**
 - Do GPUs move between the prefill and decode pools, and how long does a move take?
 - What does MIG do to the KV transfer and to monitoring?
 - What signals does the planner use, and how can they mislead it?
@@ -179,4 +179,4 @@ kubectl -n dynamo-system logs $PL | grep -E "\[summary\]|Easy decode|Load prefil
 kubectl label node <node> nvidia.com/mig.config=all-disabled --overwrite                         # MIG off again
 ```
 
-Next: [Exercise 6, tuning the engine on one H100](06-engine-tuning.md).
+Next: [Part 6, tuning the engine on one H100](06-engine-tuning.md).

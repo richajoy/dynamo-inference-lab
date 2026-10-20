@@ -1,5 +1,5 @@
 # Overlay: advertise one GPU as 2 x nvidia.com/gpu via time-slicing (used for the two-worker KV-routing A/B on a
-# single A100, exercise 3).
+# single A100, Part 3).
 #   on : helm upgrade gpu-operator ... -f values.yaml -f timeslice-2.values.yaml
 #   off: helm upgrade gpu-operator ... -f values.yaml     (allocatable back to 1)
 # Time-slicing gives NO memory isolation: each pod must cap its own memory (vLLM --gpu-memory-utilization /

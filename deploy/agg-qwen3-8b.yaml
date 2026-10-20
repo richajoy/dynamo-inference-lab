@@ -1,4 +1,4 @@
-# Aggregated serving baseline (exercise 2): 1 frontend + 1 vLLM worker on one whole GPU (H100 80GB or A100 40GB).
+# Aggregated serving baseline (Part 2): 1 frontend + 1 vLLM worker on one whole GPU (H100 80GB or A100 40GB).
 # Based on vendor/dynamo/examples/backends/vllm/deploy/agg.yaml (v1.5.1).
 # Differences from upstream / agg.sh smoke test:
 #   - Qwen3-8B BF16 (~16 GB weights): big enough for meaningful prefill/decode profiles,

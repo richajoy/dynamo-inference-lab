@@ -1,7 +1,7 @@
 # Findings, corrections and open questions
 
 This page collects what the project established, what it got wrong along the way and how that was caught, and what
-we would run next. Each item links to the exercise with the evidence.
+we would run next. Each item links to the part with the evidence.
 
 - [What we set out to prove, and the verdict](#what-we-set-out-to-prove-and-the-verdict)
 - [Findings](#findings)
@@ -16,14 +16,14 @@ we would run next. Each item links to the exercise with the evidence.
 | Claim | Verdict | Evidence |
 |---|---|---|
 | Decode is memory-bandwidth-bound, so its step time follows bytes read | **Holds.** One fitted constant (66.5% of peak bandwidth) predicts every measured decode step within 3% | [Foundations §4](00-foundations.md#4-a-decode-step-time-model-that-predicts-our-measurements) |
-| Prefill is compute-bound | **Holds.** A 3,000-token prompt keeps the GPU busy ~70 ms, ~64% of peak FLOPS; saturated prefill scaled with the compute ratio from A100 to H100 | [Exercise 7](07-profiling.md), [exercise 2](02-aggregated-serving.md#the-same-experiment-on-an-a100) |
+| Prefill is compute-bound | **Holds.** A 3,000-token prompt keeps the GPU busy ~70 ms, ~64% of peak FLOPS; saturated prefill scaled with the compute ratio from A100 to H100 | [Part 7](07-profiling.md), [Part 2](02-aggregated-serving.md#the-same-experiment-on-an-a100) |
 | Mixing prefill into decode steps hurts decoders | **Holds, and it is large.** At 64 concurrent prompt-heavy requests, 61% of mean TPOT lies above the median token gap, which we attribute to steps carrying prompt chunks | [Foundations §5](00-foundations.md#5-mixing-prefill-and-decode-in-one-step-interference) |
-| KV-aware routing beats round-robin on shared-prefix traffic | **Holds only after tuning.** Defaults: 0.69 against 0.55 hit rate. With `--router-prefill-load-scale 10`: 0.90 | [Exercise 3](03-kv-aware-routing.md) |
-| Higher hit rates mean lower TTFT | **Depends on the miss cost.** Large gains where a miss is expensive; none at the median where a miss costs less than the fixed per-request path | [Exercise 3](03-kv-aware-routing.md#why-hits-stopped-mattering-for-median-ttft-on-the-h100) |
-| Disaggregation removes interference | **Holds over NVLink:** TPOT halved on prompt-heavy load. **Fails on standard pods:** KV moves over TCP and throughput drops 18x | [Exercise 4](04-pd-disaggregation.md) |
-| Disaggregation beats aggregation on the same GPUs | **Not with two GPUs.** A fixed 1:1 split saturates whichever pool the traffic leans on; two aggregated workers won throughput on every shape | [Exercise 4](04-pd-disaggregation.md#3-pd-against-two-aggregated-workers-on-the-same-two-gpus) |
-| The planner moves GPUs between pools as traffic shifts | **Yes, by deleting and cold-starting pods, 2 to 3 minutes per move,** and it can move capacity the wrong way when the KV transfer is slow | [Exercise 5](05-autoscaling-and-mig.md) |
-| Engine settings can substitute for hardware | **Partly.** One tuned H100 matched the throughput of a 1:1 prefill/decode pair on two | [Exercise 6](06-engine-tuning.md) |
+| KV-aware routing beats round-robin on shared-prefix traffic | **Holds only after tuning.** Defaults: 0.69 against 0.55 hit rate on A100 (0.64 against 0.54 on H100). With `--router-prefill-load-scale 10`: 0.90 (0.89 on H100) | [Part 3](03-kv-aware-routing.md) |
+| Higher hit rates mean lower TTFT | **Depends on the miss cost.** Large gains where a miss is expensive; none at the median where a miss costs less than the fixed per-request path | [Part 3](03-kv-aware-routing.md#why-hits-stopped-mattering-for-median-ttft-on-the-h100) |
+| Disaggregation removes interference | **Holds over NVLink:** TPOT halved on prompt-heavy load. **Fails on standard pods:** KV moves over TCP and throughput drops 18x | [Part 4](04-pd-disaggregation.md) |
+| Disaggregation beats aggregation on the same GPUs | **Not with two GPUs.** A fixed 1:1 split saturates whichever pool the traffic leans on; two aggregated workers won throughput on every shape | [Part 4](04-pd-disaggregation.md#3-pd-against-two-aggregated-workers-on-the-same-two-gpus) |
+| The planner moves GPUs between pools as traffic shifts | **Yes, by deleting and cold-starting pods, 2 to 3 minutes per move,** and it can move capacity the wrong way when the KV transfer is slow | [Part 5](05-autoscaling-and-mig.md) |
+| Engine settings can substitute for hardware | **Partly.** One tuned H100 matched the throughput of a 1:1 prefill/decode pair on two | [Part 6](06-engine-tuning.md) |
 
 ## Findings
 
@@ -39,57 +39,57 @@ we would run next. Each item links to the exercise with the evidence.
    compute contention; tensor-core and DRAM activity during those steps were not measured. Mean TPOT (43.6 ms)
    blends the two; the gap distribution separates them. ([Foundations §5](00-foundations.md#5-mixing-prefill-and-decode-in-one-step-interference))
 3. **The chunk budget moves waiting, it does not remove it.** At saturation, 512 cut TPOT 60% and raised median TTFT
-   7.7x. Below saturation, 512 won on both. ([Exercise 6](06-engine-tuning.md#tokens-per-step-the-chunk-budget))
+   7.7x. Below saturation, 512 won on both. ([Part 6](06-engine-tuning.md#tokens-per-step-the-chunk-budget))
 4. **FP8 KV pays where capacity binds; FP8 weights pay where bandwidth binds.** Long-context c64: FP8 KV +37%
    requests/s. Decode-heavy c16: FP8 weights -29% TPOT, less than the -41% the byte count predicts (likely activation
-   quantization overhead; not isolated). ([Exercise 6](06-engine-tuning.md))
+   quantization overhead; not isolated). ([Part 6](06-engine-tuning.md))
 5. **Speculative decoding's gain shrinks as the batch grows,** as the roofline predicts: n-gram gave 2.1x TPOT at one
-   user and 1.7x at 64, on synthetic text that flatters acceptance. ([Exercise 6](06-engine-tuning.md#tokens-emitted-per-step-speculative-decoding))
+   user and 1.7x at 64, on synthetic text that flatters acceptance. ([Part 6](06-engine-tuning.md#tokens-emitted-per-step-speculative-decoding))
 
 ### Routing
 
 6. **Dynamo's default KV-router weighting barely beats round-robin.** At `prefill_load_scale` 1, a full prefix miss
    costs about the same as one extra running request, so routine load imbalance spills requests to cold workers. Scale
-   10 keeps prefixes sticky: 0.90 hit rate, the same on two GPU generations. ([Exercise 3](03-kv-aware-routing.md#why-the-default-router-barely-beats-round-robin))
+   10 keeps prefixes sticky: 0.90 hit rate, the same on two GPU generations. ([Part 3](03-kv-aware-routing.md#why-the-default-router-barely-beats-round-robin))
 7. **Approximate mode with the default TTL over-predicts its own hit rate by 26 points** under cache pressure; LRU
-   simulation tracks reality. ([Exercise 3](03-kv-aware-routing.md#approximate-mode-ttl-over-predicts-lru-tracks-reality))
+   simulation tracks reality. ([Part 3](03-kv-aware-routing.md#approximate-mode-ttl-over-predicts-lru-tracks-reality))
 8. **Dynamo's request trace records the router's prediction as `cached_tokens` in KV modes,** not the engine's result,
-   so it cannot be used to check the router per request. ([Exercise 3](03-kv-aware-routing.md#the-request-trace-records-the-routers-guess-not-the-engines-result))
-9. **Router-side queueing cut TTFT p90 2.4x under overload**, at ~34 ms average time in the router. ([Exercise 3](03-kv-aware-routing.md#under-overload-router-side-queueing))
+   so it cannot be used to check the router per request. ([Part 3](03-kv-aware-routing.md#the-request-trace-records-the-routers-guess-not-the-engines-result))
+9. **Router-side queueing cut TTFT p90 2.4x under overload**, at ~34 ms average time in the router. ([Part 3](03-kv-aware-routing.md#under-overload-router-side-queueing))
 
 ### Disaggregation and autoscaling
 
 10. **Single-node disaggregation on standard Kubernetes pods silently moves KV over TCP.** One GPU per pod hides the
     peer GPU from CUDA, so UCX cannot use CUDA IPC and falls back to the pod network: ~0.45 GB/s against ~164 GB/s over
     NVLink, 18x lower serving throughput than not disaggregating, and no warning anywhere. `hostIPC` does not help;
-    MIG slices of one GPU behave the same. ([Exercise 4](04-pd-disaggregation.md#1-the-standard-kubernetes-pod-spec-moves-kv-over-tcp))
+    MIG slices of one GPU behave the same. ([Part 4](04-pd-disaggregation.md#1-the-standard-kubernetes-pod-spec-moves-kv-over-tcp))
 11. **Once the link is fast, descriptor posting limits KV transfers.** Under load the free-block list fragments and a
     6,000-token transfer becomes 13,500 memory spans of 64 KiB; posting them took 55% of each transfer and cut
     bandwidth to ~9.6 GB/s. The mechanism is reported upstream for an MLA model (vLLM issue #55434); we measured it on a
     GQA model with vLLM's default one-region-per-layer layout. Block size 64 made transfers ~3.5x faster.
-    ([Exercise 4](04-pd-disaggregation.md#2-with-a-fast-link-the-copy-list-becomes-the-bottleneck))
+    ([Part 4](04-pd-disaggregation.md#2-with-a-fast-link-the-copy-list-becomes-the-bottleneck))
 12. **Admit no more decode requests than the KV cache holds.** A decode worker admitting 64 long requests where 55 fit
-    stalled at 100% KV, failed its health check and was restarted (seen once). ([Exercise 4](04-pd-disaggregation.md#4-a-decode-worker-given-more-kv-than-it-holds))
+    stalled at 100% KV, failed its health check and was restarted (seen once). ([Part 4](04-pd-disaggregation.md#4-a-decode-worker-given-more-kv-than-it-holds))
 13. **The planner cannot tell transfer back-pressure from decode load.** Over a slow link, requests waiting for their
     KV appear as queued decode tokens, and the planner moved a slice from prefill to decode during prompt-heavy load.
-    Moves take 2 to 3 minutes and single quiet samples caused flapping. ([Exercise 5](05-autoscaling-and-mig.md))
+    Moves take 2 to 3 minutes and single quiet samples caused flapping. ([Part 5](05-autoscaling-and-mig.md))
 
 ### Operations and measurement
 
 14. **The same manifest ran different engine configurations on different GPUs.** vLLM 0.28 sets the default chunk
     budget by GPU (8,192 on an H100 80GB, 2,048 on an A100 40GB). Only the engine's startup log shows it.
-    ([Exercise 2](02-aggregated-serving.md#the-same-experiment-on-an-a100))
+    ([Part 2](02-aggregated-serving.md#the-same-experiment-on-an-a100))
 15. **`GPU_UTIL` reads ~100% at any load and reports nothing on MIG;** DCGM's default 30 s interval hides short runs.
-    ([Exercise 1](01-stack-and-deployment.md#monitoring-and-two-instrument-lessons), [exercise 5](05-autoscaling-and-mig.md#2-monitoring-goes-partly-blind))
+    ([Part 1](01-stack-and-deployment.md#monitoring-and-two-instrument-lessons), [Part 5](05-autoscaling-and-mig.md#2-monitoring-goes-partly-blind))
 16. **Dynamo's "NVLink Bandwidth" dashboard panel always reads ~0,** because it applies `rate()` to a DCGM field that is
-    already a rate. ([Exercise 4](04-pd-disaggregation.md#5-dashboards-during-the-pd-tests))
+    already a rate. ([Part 4](04-pd-disaggregation.md#5-dashboards-during-the-pd-tests))
 17. **A fresh Dynamo platform install fails until KAI's webhook is up,** and **a frontend can be Ready before any
-    worker is routable.** Both are handled in the scripts. ([Exercise 1](01-stack-and-deployment.md#problems-we-hit-and-the-fixes-now-in-the-scripts))
+    worker is routable.** Both are handled in the scripts. ([Part 1](01-stack-and-deployment.md#problems-we-hit-and-the-fixes-now-in-the-scripts))
 
 ## What we got wrong first
 
 Writing this project up forced a re-check of every number against the raw exports and logs. These are the claims we
-made during the runs and later corrected. The exercises use the corrected versions.
+made during the runs and later corrected. The parts use the corrected versions.
 
 **1. "FP8 does not raise prefill throughput, so prefill is not GEMM-bound." Retracted.** The FP8 run showed the same
 9.55 requests/s as BF16 at "c=64", but it held only 47 requests in flight: two sweeps were sharing one load-generator

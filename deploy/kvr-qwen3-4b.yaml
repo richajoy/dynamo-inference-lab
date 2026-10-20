@@ -1,4 +1,4 @@
-# KV-aware routing A/B (exercise 3). 1 frontend + 2 vLLM workers. On a single A100 the two workers are time-sliced (needs
+# KV-aware routing A/B (Part 3). 1 frontend + 2 vLLM workers. On a single A100 the two workers are time-sliced (needs
 # platform/gpu-operator/timeslice-2.values.yaml -> allocatable nvidia.com/gpu: 2).
 # Based on vendor/dynamo/examples/backends/vllm/deploy/agg_router.yaml + agg_router_kv_approx.yaml (v1.5.1).
 #

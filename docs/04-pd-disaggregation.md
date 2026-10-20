@@ -1,9 +1,9 @@
-# Exercise 4: Prefill/decode disaggregation, splitting one request across two GPUs
+# Part 4: Prefill/decode disaggregation, splitting one request across two GPUs
 
 **Goal.** Run prefill and decode on separate GPUs, prove the KV cache really moves between them, measure how fast,
 and find out when "one prefill GPU + one decode GPU" beats "two GPUs that each do both".
 
-**Questions this exercise clarifies**
+**Questions this part clarifies**
 - Which component does what in a disaggregated request: Dynamo, vLLM, NIXL, UCX.
 - How to tell which transport carried the KV cache, and why the standard Kubernetes pod spec silently picks the slow one.
 - Why a fast link is necessary but not sufficient: what limited transfers once the link was fast.
@@ -13,7 +13,7 @@ and find out when "one prefill GPU + one decode GPU" beats "two GPUs that each d
 
 ## Why disaggregate at all
 
-[Exercise 2](02-aggregated-serving.md) showed the cost of mixing: on prefill-heavy traffic at 64 concurrent requests,
+[Part 2](02-aggregated-serving.md) showed the cost of mixing: on prefill-heavy traffic at 64 concurrent requests,
 61% of every user's time-per-token was spent waiting for other users' prompt chunks. The decode-only step was 17 ms;
 steps carrying a big prompt chunk were ~200 ms ([foundations, section 5](00-foundations.md#5-mixing-prefill-and-decode-in-one-step-interference)).
 Disaggregation removes the mixing: prefill GPUs only prefill, decode GPUs only decode. The price is that every
@@ -51,7 +51,7 @@ touches the KV bytes. And vLLM never chooses the wire; UCX does.
 | P/D, both GPUs visible | [pd-p2p-qwen3-8b.yaml](../deploy/pd-p2p-qwen3-8b.yaml) | Each pod sees both GPUs (`NVIDIA_VISIBLE_DEVICES=all`), engine pinned with `CUDA_VISIBLE_DEVICES`. A diagnostic, see below |
 | Same, KV block 64 | [pd-p2p-bs64-qwen3-8b.yaml](../deploy/pd-p2p-bs64-qwen3-8b.yaml) | `--block-size 64` instead of 16 |
 
-Qwen3-8B BF16 on two H100 SXM with NVLink between them. Engine flags identical to the baseline of exercise 2 on every
+Qwen3-8B BF16 on two H100 SXM with NVLink between them. Engine flags identical to the baseline of Part 2 on every
 worker, so only the topology changes. Workloads: prefill-heavy (3,000 / 128), decode-heavy (256 / 1,024) and long
 (6,000 / 1,024) at concurrency 16 and 64. All variants set `UCX_PROTO_INFO=y` so UCX logs its choice.
 
@@ -99,7 +99,7 @@ scale; the dark part is descriptor posting (building and submitting the copy lis
 - **One GPU per pod (the normal pattern): TCP, ~2 s per 846 MiB, ~0.45 GB/s.** UCX logged 208 `tcp/eth0` lanes,
   some `cuda_copy` (staging GPU memory through host memory) and no `cuda_ipc` at all. The NVLink counters read zero.
 - **Adding `hostIPC: true` changed nothing.** Neither did putting both workers on MIG slices of the same physical
-  GPU ([exercise 5](05-autoscaling-and-mig.md)).
+  GPU ([Part 5](05-autoscaling-and-mig.md)).
 - **Both GPUs visible to both pods: CUDA IPC over NVLink, 5.4 ms per 846 MiB, ~164 GB/s,** about 370x faster.
 
 Why: CUDA IPC works by the exporting process creating a handle for a GPU allocation and the importing process opening
@@ -274,7 +274,7 @@ same question is RDMA versus TCP.
 
 1. **Interference breaks your TPOT target, and shrinking the chunk budget would break your TTFT target.** A smaller
    chunk caps the stall (a 2,000-token chunk costs ~50 ms of compute on an H100 for this model) but makes long prompts
-   take more steps ([exercise 6](06-engine-tuning.md)). If one budget satisfies both targets, stay aggregated.
+   take more steps ([Part 6](06-engine-tuning.md)). If one budget satisfies both targets, stay aggregated.
 2. **The KV transfer is much cheaper than the prefill it replaces.** Over NVLink, a 3,000-token prompt's 423 MiB moves
    in ~3 ms against ~70 ms of prefill. Over TCP it takes ~1 s, about 14x more than the prefill it was meant to offload.
 3. **The fleet is large enough to set the prefill:decode ratio to the traffic.** With two GPUs the only split is 1:1.
@@ -283,7 +283,7 @@ same question is RDMA versus TCP.
    about 3x one prefill GPU. So prefill-heavy traffic wants roughly 2 to 3 prefill GPUs per decode GPU, and
    decode-heavy traffic the reverse. We could only run 1:1, so treat the ratio as an estimate.
    A fixed ratio wastes whichever pool the traffic is not using, which is why autoscaling between pools matters
-   ([exercise 5](05-autoscaling-and-mig.md)).
+   ([Part 5](05-autoscaling-and-mig.md)).
 
 | Your traffic | Recommendation | Evidence here |
 |---|---|---|
@@ -321,4 +321,4 @@ kubectl -n dynamo-system exec -it aiperf -- env URL=http://pd-qwen3-8b-frontend.
   CONCURRENCIES="16 64" SHAPES="prefill-heavy decode-heavy long" bash /tmp/sweep.sh h100-pd
 ```
 
-Next: [Exercise 5, MIG slices and autoscaling between pools](05-autoscaling-and-mig.md).
+Next: [Part 5, MIG slices and autoscaling between pools](05-autoscaling-and-mig.md).

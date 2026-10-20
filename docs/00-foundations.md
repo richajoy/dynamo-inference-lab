@@ -2,7 +2,7 @@
 
 Every result in this project can be predicted, roughly, before running anything. This page shows how. It derives
 the few quantities that decide how an LLM behaves on a GPU, applies them to the model and GPU we used (Qwen3-8B on an
-NVIDIA H100 SXM), and checks the predictions against measurements. The exercises then reuse these quantities instead
+NVIDIA H100 SXM), and checks the predictions against measurements. The later parts then reuse these quantities instead
 of re-explaining them.
 
 If you only remember one thing: **every engine step reads the model weights once, and how much useful work it does
@@ -91,7 +91,7 @@ bandwidth our decode steps actually achieved (section 4).
   8,192-token chunk is far past it. Prefill time is FLOPs divided by achieved FLOPS.
 
 Prediction for a single 3,000-token prefill: ~44 TFLOP of work, 45 ms at peak. The Nsight trace in
-[exercise 7](07-profiling.md) shows the GPU busy for ~70 ms on that prompt, about 64% of peak, which is a normal
+[Part 7](07-profiling.md) shows the GPU busy for ~70 ms on that prompt, about 64% of peak, which is a normal
 efficiency for large GEMMs plus attention end to end.
 
 ## 4. A decode step-time model that predicts our measurements
@@ -150,7 +150,7 @@ vLLM's chunked prefill lets a step carry both: one token for each decoding reque
 That keeps the GPU busy, but it puts a compute-bound piece of work into a step that every decoding request is waiting on.
 
 Arithmetic for a full 8,192-token chunk: ~121 TFLOP. That is ~123 ms at peak, or ~190 ms at the ~64% of peak a single
-large prefill reached in our trace ([exercise 7](07-profiling.md)). A decode-only step at the same moment would take
+large prefill reached in our trace ([Part 7](07-profiling.md)). A decode-only step at the same moment would take
 ~17 ms. So we expect every decoding request on that GPU to wait roughly 190 ms for its next token whenever a big prompt
 chunk shares the step.
 
@@ -207,11 +207,11 @@ take becomes KV cache. On an 80 GB H100 with Qwen3-8B in BF16 that is **388,080 
 | long (6,000 / 1,024) | 7,024 | ~55 |
 
 When demand exceeds capacity, vLLM stops admitting requests (they wait) or preempts running ones (frees their KV and
-recomputes it later). Both show up as TTFT. FP8 KV doubles capacity ([exercise 6](06-engine-tuning.md)).
+recomputes it later). Both show up as TTFT. FP8 KV doubles capacity ([Part 6](06-engine-tuning.md)).
 
 **Reuse.** vLLM keeps finished KV blocks and indexes them by a hash of their tokens and everything before them. A new
 prompt that starts with the same tokens (a shared system prompt, a RAG document) skips that part of prefill. This
-**prefix cache** is per GPU, which is why routing matters ([exercise 3](03-kv-aware-routing.md)).
+**prefix cache** is per GPU, which is why routing matters ([Part 3](03-kv-aware-routing.md)).
 
 **Moving it.** If prefill and decode run on different GPUs, the KV cache must travel. A 6,000-token prompt is
 6,000 x 147,456 B = 375 blocks, 843.75 MiB (about 885 MB). A 6,001-token prompt needs one more block: 846 MiB, the
@@ -224,7 +224,7 @@ entirely on the path:
 | TCP over the Kubernetes pod network | ~0.45 GB/s | ~2,000 ms |
 
 Prefilling that same prompt takes ~150 ms. So over NVLink the transfer is a rounding error, and over TCP it costs
-13x the work it saves. [Exercise 4](04-pd-disaggregation.md) is about which path you actually get.
+13x the work it saves. [Part 4](04-pd-disaggregation.md) is about which path you actually get.
 
 ## 7. What users feel and what operators pay
 
@@ -248,7 +248,7 @@ past any fixed c, so closed-loop tails are optimistic.
 
 ## 8. How the knobs map onto these quantities
 
-Every knob tested in this project acts on one term of the step-time equations above. That is the frame the exercises
+Every knob tested in this project acts on one term of the step-time equations above. That is the frame the later parts
 use.
 
 | What the knob changes | Knobs | First-order effect |
@@ -272,7 +272,7 @@ difference:
 
 Decode should improve by about the bandwidth ratio and prefill by about the compute ratio. Measured: decode throughput
 improved 1.93x to 2.06x at every concurrency; saturated prefill-heavy throughput improved ~3x
-([exercise 2](02-aggregated-serving.md#the-same-experiment-on-an-a100)). The software was identical on both; the H100
+([Part 2](02-aggregated-serving.md#the-same-experiment-on-an-a100)). The software was identical on both; the H100
 also has FP8 tensor cores, which the A100 lacks, so the FP8 experiments ran on H100 only.
 
 ## Glossary
@@ -285,7 +285,7 @@ also has FP8 tensor cores, which the A100 lacks, so the FP8 experiments ran on H
 | Closed loop | Load that keeps exactly c requests in flight |
 | Concurrency (c) | Requests in flight at the same time |
 | Continuous batching | Each engine step re-forms the batch from whatever requests are running |
-| DGD | DynamoGraphDeployment: the Kubernetes resource describing a Dynamo serving graph ([exercise 1](01-stack-and-deployment.md)) |
+| DGD | DynamoGraphDeployment: the Kubernetes resource describing a Dynamo serving graph ([Part 1](01-stack-and-deployment.md)) |
 | Disaggregation (P/D) | Prefill and decode on separate GPUs, with the KV cache moved between them |
 | GEMM | General matrix multiply: the bulk of transformer compute |
 | GQA | Grouped-query attention: several query heads share one key/value head |
