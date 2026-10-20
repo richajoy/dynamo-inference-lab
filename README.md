@@ -15,8 +15,9 @@ happened to time-to-first-token, time-per-token, throughput and capacity. Every 
 principles: how many bytes and FLOPs each engine step needs, and what the GPU can supply. Every chart is regenerated
 from the raw benchmark exports in this repository.
 
-![Roofline for Qwen3-8B on an H100: decode steps sit on the memory-bound slope, prefill on the compute-bound
-plateau](figures/roofline-h100.png)
+<img src="figures/anim-request-journey.svg" width="100%" alt="Animated diagram: one request travels from the client through the Dynamo frontend and KV router to a prefill GPU; the frontend then sends the decode leg to a decode GPU, which pulls the KV cache over NIXL, and tokens stream back through the frontend, while the Dynamo planner sizes the GPU pools. Six costs light up in turn: a ~43 ms floor on time to first token even for short prompts; a default router hit rate of 0.64 against 0.54 for round-robin on H100; ~200 ms decode stalls when a prompt chunk shares the GPU with decoding users; a KV transfer that falls back to TCP on standard one-GPU pods (~370x slower than NVLink) or, on NVLink under load, spends ~51 ms of ~93 ms posting ~13,500 copy descriptors; decode bound by memory bandwidth (a fitted 66.5% of peak); and 2 to 3 minutes to move capacity between pools">
+
+> <sub><i>Each stage of the path costs time, measured or modelled; each callout names the chapter with the evidence.</i></sub>
 
 ## What we set out to prove
 
