@@ -106,7 +106,8 @@ predicted. Higher green is better; green and grey close together means the route
 
 **What it shows**
 - **Default `kv` barely beats round-robin:** 0.69 against 0.55.
-- **Raising `--router-prefill-load-scale` fixes it:** 0.79 at 4, **0.90 at 10**, close to the 0.92 ceiling.
+- **Raising `--router-prefill-load-scale` closes most of the gap:** the hit rate rises to 0.79 at scale 4 and
+  **0.90 at scale 10**, against a best possible 0.92.
 - With events on, the router's prediction tracks reality within ~0.01 in every arm.
 - **Approximate mode with the default TTL is badly wrong:** it predicts 0.86 while the engines deliver 0.61. With
   LRU forgetting and load scale 10 it predicts 0.88 against an actual 0.89.
