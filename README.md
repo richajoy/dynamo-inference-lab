@@ -40,7 +40,7 @@ plateau](figures/roofline-h100.png)
   ~43 ms minimum TTFT this stack showed even for short prompts. ([Exercise 3](docs/03-kv-aware-routing.md))
 - **Disaggregation on a standard Kubernetes pod spec silently moves the KV cache over TCP,** 370x slower than NVLink,
   and serves 18x less traffic than not disaggregating. With NVLink it halves time-per-token on prompt-heavy load, and
-  then CPU-side descriptor posting becomes the transfer bottleneck (a mechanism tracked upstream as vLLM issue #55434;
+  then CPU-side descriptor posting becomes the transfer bottleneck (a mechanism reported upstream as vLLM issue #55434;
   we measured it on a GQA model). ([Exercise 4](docs/04-pd-disaggregation.md))
 - **Autoscaling moves GPUs between prefill and decode pools only by deleting and cold-starting pods** (2 to 3
   minutes each), and a slow KV transfer makes the planner move capacity the wrong way. ([Exercise 5](docs/05-autoscaling-and-mig.md))

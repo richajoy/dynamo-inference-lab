@@ -65,8 +65,8 @@ we would run next. Each item links to the exercise with the evidence.
     MIG slices of one GPU behave the same. ([Exercise 4](04-pd-disaggregation.md#1-the-standard-kubernetes-pod-spec-moves-kv-over-tcp))
 11. **Once the link is fast, descriptor posting limits KV transfers.** Under load the free-block list fragments and a
     6,000-token transfer becomes 13,500 memory spans of 64 KiB; posting them took 55% of each transfer and cut
-    bandwidth to ~9.6 GB/s. This mechanism is tracked upstream for MLA models (vLLM issue #55434); we measured it on a
-    GQA model, where vLLM 0.28 has no block-contiguous layout. Block size 64 made transfers ~3.5x faster.
+    bandwidth to ~9.6 GB/s. The mechanism is reported upstream for an MLA model (vLLM issue #55434); we measured it on a
+    GQA model with vLLM's default one-region-per-layer layout. Block size 64 made transfers ~3.5x faster.
     ([Exercise 4](04-pd-disaggregation.md#2-with-a-fast-link-the-copy-list-becomes-the-bottleneck))
 12. **Admit no more decode requests than the KV cache holds.** A decode worker admitting 64 long requests where 55 fit
     stalled at 100% KV, failed its health check and was restarted (seen once). ([Exercise 4](04-pd-disaggregation.md#4-a-decode-worker-given-more-kv-than-it-holds))

@@ -84,7 +84,7 @@ decode-side proof that prompts were not recomputed](../evidence/screenshots/card
 
 ### 1. The standard Kubernetes pod spec moves KV over TCP
 
-![Animated comparison: the same 846 MiB KV cache crosses NVLink in 5.4 ms and TCP in about 2,000 ms; below, KV blocks of an idle engine are contiguous (36 descriptors) while under load they are scattered (13,500 descriptors)](../figures/anim-kv-transfer.svg)
+![Animated comparison: an idle 846 MiB KV cache crosses NVLink in 5.4 ms and TCP in about 2,000 ms; below, KV blocks of an idle engine are contiguous (36 descriptors) while under load a 6,000-token (843.75 MiB) transfer is scattered into 13,500 descriptors](../figures/anim-kv-transfer.svg)
 
 > <sub><i>Two costs in sequence: first the wire (TCP is ~370x slower than NVLink), then the block layout (scattered blocks
 > multiply the copy list).</i></sub>
@@ -125,24 +125,29 @@ Over NVLink, an idle 846 MiB transfer took 5.4 ms. Under load (c=64, long prompt
 more than half of that was posting, not moving data.
 
 **What a descriptor is.** NIXL copies a list of `(address, length, device)` spans. vLLM registers one memory region
-per layer, so a transfer is described per layer as a list of contiguous runs of KV blocks; adjacent blocks merge into
-one span. When the engine is idle, a new request gets consecutive free blocks and each layer is one span: **36
-descriptors** for 36 layers. Under load, requests start and finish constantly, the free-block list is shuffled, no two
-of a request's blocks are adjacent, and the count becomes layers x blocks: **36 x 375 = 13,500** for a 6,000-token
-prompt.
+per layer (K and V share it) and asks for one span per block of each layer; NIXL then merges neighbouring spans into
+one, but only when they are adjacent on both GPUs. When the engine is idle, a new request gets consecutive free
+blocks and each layer is one span: **36 descriptors** for 36 layers. Under load, requests start and finish constantly,
+the free-block list is shuffled, no two of a request's blocks are adjacent, and the count becomes layers x blocks:
+**36 x 375 = 13,500** for a 6,000-token prompt (6,000 tokens / 16 tokens per block = 375 blocks).
 
-**Why that is slow.** Each descriptor costs a roughly fixed amount of CPU work to build and post, about **3.8 μs** here
-(51 ms over 13,442 descriptors). Each span is one block of one layer, just 64 KiB. Posting alone then caps the
-transfer at 64 KiB / 3.8 μs, ~17 GB/s, before any byte moves; we measured 9.6 GB/s on a link that does 164.
+**Why that is slow.** Each descriptor costs CPU work to build and post, about **3.8 μs** here (51 ms over 13,442
+descriptors). That is the cost on this same-node NVLink path (`cuda_ipc`); RDMA transports are reported at a fraction
+of a microsecond per descriptor. Each span is one block of one layer, just 64 KiB. If posting and copying do not
+overlap, posting alone caps the transfer at 64 KiB / 3.8 μs, ~17 GB/s; we measured 9.6 GB/s on a link that does 164.
+Posting explains about 51 of the ~93 ms; the other ~40 ms was not isolated.
+
+The cost also lands on users who are not transferring anything: vLLM posts these reads from the decode engine's main
+loop, so every running decode waits while a transfer is being posted. An open vLLM pull request (#45211) moves posting
+to a background thread, which moves the wait to the new request's TTFT rather than removing it.
 
 ```
 transfer time  ~  fixed setup  +  descriptors x posting cost  +  bytes / link bandwidth
 ```
 
-The middle term was invisible on TCP: the TCP runs were not fragmented (44 descriptors, 0.6 ms of posting), and even
-a fully fragmented list (~51 ms) would be ~2.5% of a 2,000 ms transfer. That is why it only appeared once the
-transport was fixed. The same fragmentation mechanism is tracked upstream in vLLM issue #55434 for
-MLA-attention models; our measurements show it equally on a GQA model like Qwen3-8B.
+The middle term only matters once the link is fast. P/D over TCP is not a deployment option in the first place:
+with transfers of seconds, posting is noise there. The same mechanism is reported upstream in vLLM issue #55434 for an
+MLA-attention model on GB200, where a Qwen3-8B reproduction has also been posted; our H100 measurements agree.
 
 **Mitigation tested: `--block-size 64`.** Four times bigger blocks, four times fewer of them: a fully fragmented
 6,000-token transfer becomes 36 x 94 = 3,384 descriptors and took ~26 ms (~33 GB/s) instead of ~93 ms, about 3.5x
