@@ -570,7 +570,7 @@ def stack_overview():
         "OP": (388, 152, 160, 42, "dynamo", ["Dynamo operator"]),
         "C": (62, 152, 156, 42, "client", ["Client / AIPerf"]),
         "F": (8, 232, 266, 60, "dynamo", ["Dynamo frontend", "HTTP, tokenize, KV-aware router"]),
-        "P": (232, 330, 272, 60, "gpu", ["vLLM prefill or aggregated worker", "one GPU or MIG slice"]),
+        "P": (232, 330, 272, 60, "gpu", ["vLLM prefill or aggregated worker", "GPU pool or MIG slice"]),
         "D": (276, 506, 186, 46, "gpu", ["vLLM decode worker"]),
     }
     edges = {  # name: (points, stroke class, marker, dash)

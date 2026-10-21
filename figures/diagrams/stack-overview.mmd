@@ -1,6 +1,6 @@
 flowchart TB
     C[Client / AIPerf] --> F[Dynamo frontend<br/>HTTP, tokenize, KV-aware router]
-    F --> P[vLLM prefill or aggregated worker<br/>one GPU or MIG slice]
+    F --> P[vLLM prefill or aggregated worker<br/>GPU pool or MIG slice]
     F --> D[vLLM decode worker]
     P -.->|KV cache via NIXL / UCX, NVLink or TCP| D
     PL[Dynamo planner] -->|replica counts| OP[Dynamo operator]
