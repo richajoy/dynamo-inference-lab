@@ -5,7 +5,7 @@
   figures/anim-interference.svg   why a prompt chunk stalls every decoding user, and what disaggregation changes
   figures/anim-kv-transfer.svg    one KV cache over NVLink vs TCP, and contiguous vs fragmented KV blocks
   figures/anim-request-journey.svg  one request: where TTFT and TPOT are spent, and the knob that moves each (README hero)
-  figures/anim-stack-overview.svg   the stack and who manages it (README), figures/diagrams/stack-overview.mmd animated
+  figures/anim-stack-overview.svg   the stack and who manages it (README): stack-overview.mmd plus the response path
 
 Each SVG animates with CSS keyframes, loops, respects prefers-reduced-motion (motion stops and a complete static
 diagram remains) and prefers-color-scheme (dark palette). Numbers shown are the measured values used in the docs.
@@ -537,16 +537,18 @@ def rounded(points, r=8):
 
 
 def stack_overview():
-    """The README stack diagram (figures/diagrams/stack-overview.mmd), same boxes, edges and labels, animated:
-    the planner and operator create the worker pods, then one request flows through them."""
-    W, H, CYC = 560, 566, 12
+    """The README stack diagram (figures/diagrams/stack-overview.mmd), same boxes, edges and labels, plus the response
+    path, animated: the planner and operator create the worker pods, then one request flows through them and its
+    output tokens stream back through the frontend to the client."""
+    W, H, CYC = 560, 566, 14
     css = ("\n  .m15 { font-size: 15px; } .m14 { font-size: 14px; }"
            "\n  .chip { fill: #e8e8e8; }"
-           "\n  .e-blue { stroke: #1f6feb; fill: none; } .e-grey { fill: none; } .e-kv { stroke: #8250df; fill: none; }")
+           "\n  .e-blue { stroke: #1f6feb; fill: none; } .e-grey { fill: none; } .e-kv { stroke: #8250df; fill: none; }"
+           "\n  .e-green { stroke: #4c8c00; fill: none; }")
     defs = ('<defs>' + "".join(
         f'<marker id="{i}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
         f'<path d="M0,0 L10,5 L0,10 z" fill="{c}"/></marker>'
-        for i, c in (("hb", "#1f6feb"), ("hg", "#8c959f"), ("hp", "#8250df"))) + '</defs>')
+        for i, c in (("hb", "#1f6feb"), ("hg", "#8c959f"), ("hp", "#8250df"), ("hgr", "#4c8c00"))) + '</defs>')
 
     def node(x, y, w, h, cls, lines):
         out = [f'<rect class="{cls}" x="{x}" y="{y}" width="{w}" height="{h}" rx="5" stroke-width="1.5"/>']
@@ -576,13 +578,15 @@ def stack_overview():
         "f-p": ([(182, 292), (182, 312), (328, 312), (328, 328)], "e-blue", "hb", None),
         "f-d": ([(100, 292), (100, 488), (328, 488), (328, 504)], "e-blue", "hb", None),
         "p-d": ([(368, 390), (368, 504)], "e-kv", "hp", "3 4"),
+        "d-f": ([(276, 529), (50, 529), (50, 294)], "e-green", "hgr", None),
+        "f-c": ([(96, 232), (96, 196)], "e-green", "hgr", None),
         "pl-op": ([(468, 54), (468, 150)], "line e-grey", "hg", None),
         "op-p": ([(444, 194), (444, 212), (408, 212), (408, 328)], "line e-grey", "hg", None),
         "op-d": ([(492, 194), (492, 212), (524, 212), (524, 488), (408, 488), (408, 504)], "line e-grey", "hg", None),
     }
     body = [defs]
     for name, (pts, cls, mk, dash) in edges.items():
-        width = 2.5 if name == "p-d" else (2 if cls == "e-blue" else 1.5)
+        width = 2.5 if name == "p-d" else (2 if cls in ("e-blue", "e-green") else 1.5)
         d = f' stroke-dasharray="{dash}"' if dash else ""
         body.append(f'<path class="{cls}" d="{rounded(pts)}" stroke-width="{width}"{d} marker-end="url(#{mk})"/>')
     body += [node(*v) for v in nodes.values()]
@@ -590,8 +594,8 @@ def stack_overview():
     # Highlights: the planner sets replica counts, the operator creates both worker pods, then one request runs:
     # client -> frontend -> prefill leg -> decode leg -> the decode worker pulls the KV cache and generates.
     highlights = [("PL", "dynamo", 1, 12), ("OP", "dynamo", 12, 22), ("P", "gpu", 22, 30), ("D", "gpu", 22, 30),
-                  ("C", "client", 32, 40), ("F", "dynamo", 40, 50), ("P", "prefill", 52, 64),
-                  ("D", "decode", 80, 96)]
+                  ("C", "client", 32, 40), ("F", "dynamo", 40, 48), ("P", "prefill", 50, 60),
+                  ("D", "decode", 74, 92), ("C", "client", 86, 98)]
     for i, (key, cls, a, b) in enumerate(highlights):
         x, y, w, h = nodes[key][:4]
         name = f"hl{i}"
@@ -600,20 +604,25 @@ def stack_overview():
         css += pulse(name, a, b)
     dots = [("d-pl", edges["pl-op"][0], 4, 12, "c-blue", 6), ("d-op1", edges["op-p"][0], 13, 22, "c-blue", 6),
             ("d-op2", edges["op-d"][0], 13, 22, "c-blue", 6), ("d-c", edges["c-f"][0], 33, 40, "c-blue", 7),
-            ("d-fp", edges["f-p"][0], 43, 52, "c-blue", 7), ("d-fd", edges["f-d"][0], 63, 72, "c-blue", 7)]
+            ("d-fp", edges["f-p"][0], 42, 50, "c-blue", 7), ("d-fd", edges["f-d"][0], 58, 66, "c-blue", 7)]
+    for i in range(5):  # output tokens: decode worker -> frontend, then frontend -> client
+        s0 = 76 + i * 3
+        dots += [(f"tk{i}a", edges["d-f"][0], s0, s0 + 6, "c-green", 6),
+                 (f"tk{i}b", edges["f-c"][0], s0 + 6.5, s0 + 8, "c-green", 6)]
     for name, pts, a, b, cls, r in dots:
         body.append(f'<circle class="{cls} motion" r="{r}" cx="0" cy="0" '
                     f'style="animation: {name} {CYC}s linear infinite; opacity: 0;"/>')
         css += path_anim(name, pts, a, b)
     for i in range(5):  # KV blocks pulled down the purple edge
-        name, s0 = f"kv{i}", 71 + i * 2
+        name, s0 = f"kv{i}", 64 + i * 2
         body.append(f'<rect class="c-purple motion" x="-6" y="-6" width="12" height="12" rx="2" '
                     f'style="animation: {name} {CYC}s linear infinite; opacity: 0;"/>')
         css += path_anim(name, [(368, 392), (368, 500)], s0, s0 + 6)
     # Edge labels last, so moving dots pass behind them as the edges do.
     body += [chip(468, 100, ["replica counts"], 112),
              chip(408, 262, ["creates pods from the", "DynamoGraphDeployment"], 190),
-             chip(368, 448, ["KV cache via NIXL / UCX,", "NVLink or TCP"], 186)]
+             chip(368, 448, ["KV cache via NIXL / UCX,", "NVLink or TCP"], 186),
+             chip(163, 529, ["output tokens"], 104)]
     return svg(W, H, "\n".join(body), css)
 
 
