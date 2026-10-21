@@ -71,7 +71,9 @@ baseline; the linked parts give the conditions.
 
 ## The stack, and who manages what
 
+<p align="center">
 <img src="figures/anim-stack-overview.svg" width="540" alt="The stack: the client sends requests to the Dynamo frontend (HTTP, tokenize, KV-aware router), which routes to a vLLM prefill or aggregated worker and a vLLM decode worker; the KV cache moves between workers via NIXL / UCX over NVLink (measured here), RoCE or InfiniBand; output tokens stream from the decode worker back through the frontend to the client; the Dynamo planner sets replica counts and the Dynamo operator creates the worker pods from the DynamoGraphDeployment">
+</p>
 
 > <sub><i>Every knob belongs to one box: routing to the frontend, engine flags to the workers, pool sizes to the planner, and
 > the KV transport to which GPUs and network devices each pod can see.</i></sub>
