@@ -293,16 +293,29 @@ TIMED_CSS = """
 
 
 class Timeline:
-    """Times in seconds on one looping clock of `cyc` seconds; every element keeps its own @keyframes."""
+    """Times in seconds on one looping clock of `cyc` seconds; every element keeps its own @keyframes.
 
-    def __init__(self, cyc):
-        self.cyc, self.css = cyc, TIMED_CSS
+    `pace` optionally slows parts of the loop: [(until, factor), ...] in script seconds, so motion can stay brisk while
+    the time spent on a callout is stretched for reading. Script times are mapped through it; `dur` is the real loop."""
+
+    def __init__(self, cyc, pace=None):
+        self.cyc, self.css, self.pace = cyc, TIMED_CSS, pace or [(cyc, 1)]
+        self.dur = self.real(cyc)
+
+    def real(self, s):
+        out, prev = 0.0, 0.0
+        for until, k in self.pace:
+            out += (min(s, until) - prev) * k
+            if s <= until:
+                return out
+            prev = until
+        return out + (s - prev) * self.pace[-1][1]
 
     def pct(self, s):
-        return 100 * s / self.cyc
+        return 100 * self.real(s) / self.dur
 
     def attr(self, cls, name, extra=""):
-        return f'class="{cls} motion" style="animation: {name} {self.cyc:g}s linear infinite; opacity: 0;{extra}"'
+        return f'class="{cls} motion" style="animation: {name} {self.dur:.2f}s linear infinite; opacity: 0;{extra}"'
 
     def track(self, name, pts):
         """Move a mark through (seconds, x, y, opacity) points; hidden before the first and after the last."""
@@ -313,9 +326,10 @@ class Timeline:
         self.css += keyframes(name, stops)
 
     def shown(self, name, t0, t1, ramp=0.25, peak=1):
-        p = self.pct
-        self.css += keyframes(name, [(0, "opacity: 0;"), (p(t0), "opacity: 0;"), (p(t0 + ramp), f"opacity: {peak};"),
-                                     (p(t1 - ramp), f"opacity: {peak};"), (p(t1), "opacity: 0;"), (100, "opacity: 0;")])
+        """Fade in at t0 and out by t1 (script seconds); the fades last `ramp` real seconds however slow the pace."""
+        a, b, r = self.pct(t0), self.pct(t1), 100 * ramp / self.dur
+        self.css += keyframes(name, [(0, "opacity: 0;"), (a, "opacity: 0;"), (a + r, f"opacity: {peak};"),
+                                     (b - r, f"opacity: {peak};"), (b, "opacity: 0;"), (100, "opacity: 0;")])
 
     def ring(self, name, t0, pulses=2):
         stops = [(0, "opacity: 0; transform: scale(1);")]
@@ -355,7 +369,10 @@ def callout_panel(tl, py, items, spans, x0=24, w=912, h=146):
 # ---------------------------------------------------------------- 4. request journey (README hero)
 def request_journey():
     W, H = 960, 548
-    tl = Timeline(22.0)
+    # Motion runs at 1.2x script time; the quiet end of each stop stretches so its callout holds ~11 s to be read,
+    # and the end-to-end scoreboard ~13 s. No two moving marks fall inside a stretched span.
+    tl = Timeline(22.0, pace=[(3.2, 1.2), (4.6, 5.97), (7.0, 1.2), (8.2, 6.97), (11.1, 1.2), (11.6, 15.04),
+                              (14.5, 1.2), (15.0, 15.04), (18.0, 2.2), (18.4, 11.0), (22.0, 3.61)])
     YT, YB = 128, 208           # worker row
     PY = 360                    # callout panel top
 
@@ -446,15 +463,15 @@ def request_journey():
         tl.track(f"kv{i}", [(a, 634, YT + 40, 1), (a + 0.5, 764, YT + 40, 1), (a + 0.51, 764, YT + 40, 0)])
     # output tokens stream back through the frontend
     for i in range(5):
-        a = 11.8 + i * 0.5
+        a = 11.8 + i * 0.3
         body.append(f'<circle {tl.attr("c-green", f"tok{i}")} r="6" cx="0" cy="0"/>')
         tl.track(f"tok{i}", [(a, 853, YB + 2, 1), (a + 0.2, 853, YB + 30, 1), (a + 1.0, 227, YB + 30, 1),
                              (a + 1.15, 227, YB + 6, 1), (a + 1.3, 158, YT + 68, 1), (a + 1.4, 130, YT + 68, 1),
                              (a + 1.41, 130, YT + 68, 0)])
     # planner: a new pod's cold start fills the bar
     body.append(f'<rect class="c-blue motion" x="770" y="{YP + 33}" width="150" height="10" rx="3" '
-                f'style="transform-origin: 770px {YP + 33}px; animation: cold {tl.cyc:g}s linear infinite; transform: scaleX(0);"/>')
-    tl.fill_bar("cold", 15.2, 18.0, 18.3)
+                f'style="transform-origin: 770px {YP + 33}px; animation: cold {tl.dur:.2f}s linear infinite; transform: scaleX(0);"/>')
+    tl.fill_bar("cold", 15.2, 18.0, 18.38)
 
     # callouts: what the stage sets, the time we measured there, the knob we turned and what it did
     items = [
