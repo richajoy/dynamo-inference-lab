@@ -7,7 +7,7 @@
       "gpu_index": 0,
       "gpu_name": "NVIDIA A100-SXM4-40GB",
       "gpu_uuid": "GPU-9aa7f743-acdb-7c93-66e4-0e85755c5ec8",
-      "hostname": "129-146-163-133",
+      "hostname": "gpu-node",
       "metrics": {
        "nvidia_energy_consumption": {
         "avg": 0.0002813169999988929,

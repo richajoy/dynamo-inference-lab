@@ -211,7 +211,7 @@
       "gpu_name": "NVIDIA A100-SXM4-40GB",
       "gpu_uuid": "GPU-9aa7f743-acdb-7c93-66e4-0e85755c5ec8",
       "platform": "nvidia",
-      "hostname": "129-146-163-133",
+      "hostname": "gpu-node",
       "namespace": "dynamo-system",
       "pod_name": "agg-qwen3-8b-0-vllmdecodeworker-d5p4c",
       "metrics": {}

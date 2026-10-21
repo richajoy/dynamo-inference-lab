@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Capture short nsys windows from the live profiled worker (deploy/prof-agg-qwen3-8b.yaml). Runs ON the node.
 #   ./profile/nsys-capture.sh <label>
-# Mechanism (verified in vendor/dynamo v1.5.1 + vLLM 0.28 by the upstream-vllm agent and checked here):
+# Mechanism (verified against the Dynamo 1.5.1 and vLLM 0.28 source):
 #   1. ARM once:  nsys start --session=vllm -c cudaProfilerApi --capture-range-end=repeat
 #                 -> nsys records only between cudaProfilerStart/Stop, and re-arms after each range (one report each).
 #   2. Per window: POST worker:9090/engine/control/start_profile -> vLLM CUDA profiler -> cudaProfilerStart,

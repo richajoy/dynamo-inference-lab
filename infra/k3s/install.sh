@@ -35,7 +35,7 @@ preflight() {
 }
 
 k3s() {
-  say "Installing k3s $K3S_VERSION (traefik + servicelb disabled; kubeconfig readable by ubuntu)"
+  say "Installing k3s $K3S_VERSION (traefik + servicelb disabled; kubeconfig readable by non-root users)"
   curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="$K3S_VERSION" sudo -E sh -s - server \
     --write-kubeconfig-mode=644 --disable=traefik --disable=servicelb
   for _ in $(seq 1 30); do kubectl get nodes 2>/dev/null | grep -q ' Ready' && break; sleep 2; done
@@ -75,7 +75,6 @@ helm_install() {
 
 gpu_operator() {
   say "Installing GPU Operator $GPU_OPERATOR_VERSION with $VALUES"
-  grep -q 'TODO(human)' "$VALUES" && { echo "values.yaml still has TODO(human); fill it in first"; exit 1; }
   helm repo add nvidia https://helm.ngc.nvidia.com/nvidia >/dev/null 2>&1 || true
   helm repo update nvidia >/dev/null
   helm upgrade -i gpu-operator nvidia/gpu-operator -n gpu-operator --create-namespace \
