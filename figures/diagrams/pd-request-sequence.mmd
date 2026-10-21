@@ -13,7 +13,7 @@ sequenceDiagram
     F->>D: decode leg, with the transfer params attached
     rect rgba(130, 80, 223, 0.14)
     D->>P: NIXL READ of the staged blocks (846 MiB) over the transport UCX chose
-    Note over P,D: cuda_ipc over NVLink: ~5 ms. tcp over the pod network: ~2,000 ms
+    Note over P,D: cuda_ipc over NVLink: ~5 ms for 846 MiB
     end
     rect rgba(76, 140, 0, 0.14)
     D-->>C: tokens 2..N, streamed through the frontend

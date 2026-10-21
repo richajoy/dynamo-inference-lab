@@ -19,13 +19,14 @@ steps carrying a big prompt chunk were ~200 ms ([foundations, section 5](00-foun
 Disaggregation removes the mixing: prefill GPUs only prefill, decode GPUs only decode. The price is that every
 request's KV cache must travel from one GPU to the other, and the ratio of prefill to decode GPUs is now fixed.
 
-![Animated diagram: in aggregated serving the prompt goes from the client through the Dynamo frontend to one GPU, which prefills and then streams tokens back; in disaggregated serving the prompt goes to a prefill GPU, the KV cache moves to a decode GPU over NIXL, and the decode GPU streams the tokens](../figures/anim-request-path.svg)
+![Animated comparison on the same two H100s with prompt-heavy traffic at 64 concurrent users: aggregated, each GPU runs prompt chunks inside its decode steps so every decoding user on that GPU waits (TPOT 23.8 ms, TTFT p50 603 ms, 16.8 requests/s); split, the decode GPU only decodes (TPOT 12.7 ms) while prompts queue for the single prefill GPU and their KV cache crosses NVLink (TTFT p50 2,878 ms, 12.8 requests/s); at 16 users the split wins both TTFT p50 (205 vs 449 ms) and TPOT (8.8 vs 9.6 ms)](../figures/anim-agg-vs-disagg.svg)
 
-> <sub><i>Disaggregation adds one step, moving the whole KV cache between GPUs, so it pays only if that move is fast.</i></sub>
+> <sub><i>At 16 users the split wins TTFT p50 and TPOT at equal throughput (TTFT p99 doubles); at 64 it buys half the
+> TPOT with TTFT and throughput, because one prefill GPU becomes the bottleneck.</i></sub>
 
 ## Who does what in a disaggregated request
 
-<img src="../figures/diagrams/pd-request-sequence.svg" width="100%" alt="Sequence of a disaggregated request: the client sends a 6,001-token prompt to the Dynamo frontend; the prefill leg runs on the prefill worker, which stages the KV blocks and returns kv_transfer_params; the decode leg goes to the decode worker, which pulls the 846 MiB of KV blocks with a NIXL READ (about 5 ms over NVLink, about 2,000 ms over TCP) and streams tokens 2 to N back through the frontend">
+<img src="../figures/diagrams/pd-request-sequence.svg" width="100%" alt="Sequence of a disaggregated request: the client sends a 6,001-token prompt to the Dynamo frontend; the prefill leg runs on the prefill worker, which stages the KV blocks and returns kv_transfer_params; the decode leg goes to the decode worker, which pulls the 846 MiB of KV blocks with a NIXL READ (about 5 ms over NVLink) and streams tokens 2 to N back through the frontend">
 
 > <sub><i>Dynamo orders the legs, vLLM moves the KV blocks and UCX picks the wire, so transfer speed is set by which GPUs each
 > pod can see, not by any serving flag.</i></sub>
@@ -36,7 +37,7 @@ request's KV cache must travel from one GPU to the other, and the ratio of prefi
 | Request rewriting | Dynamo's vLLM wrapper | Turns the prefill leg into "generate 1 token, keep the KV for a remote reader" and passes the transfer parameters to the decode leg | Automatic in prefill and decode modes |
 | KV layout, staging, the copy list | vLLM's `NixlConnector` | Exposes the prefill side's blocks, builds the list of memory spans to copy, pulls them on the decode side | `--kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'` (Dynamo 1.5.1 requires it in prefill mode) |
 | Transfer API | NIXL | Registers GPU memory, executes "copy these spans from that process" | Through the connector |
-| Wire | UCX | Picks a transport per connection: `cuda_ipc` (GPU to GPU), RDMA, shared memory, or `tcp` | Environment (`UCX_*`); it chooses silently |
+| Wire | UCX | Picks a transport per connection: `cuda_ipc` (GPU to GPU over NVLink) on one node, RDMA (RoCE or InfiniBand) across nodes, or a slow fallback when neither is reachable | Environment (`UCX_*`); it chooses silently |
 
 The two interfaces to remember: Dynamo and vLLM exchange one small dictionary (`kv_transfer_params`); Dynamo never
 touches the KV bytes. And vLLM never chooses the wire; UCX does.
@@ -46,9 +47,7 @@ touches the KV bytes. And vLLM never chooses the wire; UCX does.
 | Variant | Manifest | What differs |
 |---|---|---|
 | Aggregated x2 (the baseline) | [agg2-qwen3-8b.yaml](../deploy/agg2-qwen3-8b.yaml) | Two ordinary workers, one H100 each, KV router |
-| P/D, standard pods | [pd-qwen3-8b.yaml](../deploy/pd-qwen3-8b.yaml) | 1 prefill + 1 decode worker, `nvidia.com/gpu: 1` each |
-| P/D + hostIPC | [pd-hostipc-qwen3-8b.yaml](../deploy/pd-hostipc-qwen3-8b.yaml) | Same, plus `hostIPC: true` |
-| P/D, both GPUs visible | [pd-p2p-qwen3-8b.yaml](../deploy/pd-p2p-qwen3-8b.yaml) | Each pod sees both GPUs (`NVIDIA_VISIBLE_DEVICES=all`), engine pinned with `CUDA_VISIBLE_DEVICES`. A diagnostic, see below |
+| P/D over NVLink | [pd-p2p-qwen3-8b.yaml](../deploy/pd-p2p-qwen3-8b.yaml) | 1 prefill + 1 decode worker. Each pod sees both GPUs (`NVIDIA_VISIBLE_DEVICES=all`), engine pinned with `CUDA_VISIBLE_DEVICES`, so CUDA IPC works. A diagnostic, see below |
 | Same, KV block 64 | [pd-p2p-bs64-qwen3-8b.yaml](../deploy/pd-p2p-bs64-qwen3-8b.yaml) | `--block-size 64` instead of 16 |
 
 Qwen3-8B BF16 on two H100 SXM with NVLink between them. Engine flags identical to the baseline of Part 2 on every
@@ -67,7 +66,7 @@ prompt is 376 blocks = **846 MiB**; a 3,000-token prompt is 188 blocks = 423 MiB
    worker's `vllm:prompt_tokens_total` also rises by the prompt length; it counts tokens received, not computed.)
    Each run is a [terminal recording](../evidence/casts/) you can replay with `asciinema play`.
 2. **Which transport?** UCX's own log, enabled with `UCX_PROTO_INFO=y`:
-   `kubectl logs <decode-pod> | grep -oE "(tcp|cuda_ipc|cuda_copy|cma|rc_mlx5)[/a-z0-9_]*" | sort | uniq -c`.
+   `kubectl logs <decode-pod> | grep -oE "(tcp|cuda_ipc|cuda_copy|cma|rc_mlx5|dc_mlx5|rc_verbs)[/a-z0-9_]*" | sort | uniq -c`.
    Cross-checked against DCGM's NVLink byte counters, which are non-zero only if NVLink carried traffic.
 3. **How fast?** vLLM's decode worker prints a `KV Transfer metrics` line every 10 s: transfers, average and p90
    transfer time, **post time** (building and submitting the copy list), MiB per transfer, throughput, and the number
@@ -77,52 +76,49 @@ prompt is 376 blocks = **846 MiB**; a 3,000-token prompt is 188 blocks = 423 MiB
 A software claim (UCX's log), a hardware counter (NVLink bytes) and arithmetic (bytes / time, and the request rate
 it implies) must agree before we believe a transport.
 
-![Evidence card for the KV transfer: pods and GPUs, UCX transport lanes, NIXL transfer metrics, NVLink counters, and the
-decode-side proof that prompts were not recomputed](../evidence/screenshots/card-kv-transfer.png)
+What these signals showed over NVLink, from the decode worker in the
+[recording](../evidence/casts/pd-p2p-kv-transfer.cast) and the
+[NIXL log](../evidence/logs/pd-nixl-xfer-metrics.log) (one 10-second metrics interval):
+
+```
+Prefix cache hit rate: 0.0%, External prefix cache hit rate: 100.0%
+KV Transfer metrics: Num successful transfers=7, Avg xfer time (ms)=5.423, P90 xfer time (ms)=7.82, Avg post time (ms)=1.067, P90 post time (ms)=2.286, Avg MB per transfer=846.0, Throughput (MB/s)=155998.103, Avg number of descriptors=36.0
+```
 
 ## Results
 
-### 1. The standard Kubernetes pod spec moves KV over TCP
+### 1. Check the transport first: the default pod spec falls back to TCP
 
-![Animated comparison: an idle 846 MiB KV cache crosses NVLink in 5.4 ms and TCP in about 2,000 ms; below, KV blocks of an idle engine are contiguous (36 descriptors) while under load a 6,000-token (843.75 MiB) transfer is scattered into 13,500 descriptors](../figures/anim-kv-transfer.svg)
+On one node without RDMA, with the standard one-GPU-per-pod spec ([pd-qwen3-8b.yaml](../deploy/pd-qwen3-8b.yaml)),
+disaggregation runs, passes every health check and logs successful transfers, but UCX moves the KV cache over TCP on
+the pod network: ~2 s per 846 MiB, about 370x slower than NVLink
+([NIXL log](../evidence/logs/pd-nixl-xfer-metrics.log)):
 
-> <sub><i>Two costs in sequence: first the wire (TCP is ~370x slower than NVLink), then the block layout (scattered blocks
-> multiply the copy list).</i></sub>
+```
+UCX_PROTO_INFO lane counts: 208 x "| tcp/eth0 |", 15 x cuda_copy/cuda, 5 x cma/memory   (cuda_ipc absent)
+KV Transfer metrics: Num successful transfers=4, Avg xfer time (ms)=2022.598, P90 xfer time (ms)=2079.625, Avg post time (ms)=0.622, P90 post time (ms)=0.724, Avg MB per transfer=846.0, Throughput (MB/s)=418.274, Avg number of descriptors=36.0
+```
 
-![Effective KV transfer bandwidth and time per transfer, with the descriptor-posting share, for each transport
-variant](../figures/nixl-transfers.png)
+Prefill-heavy traffic then tops out at 0.92 requests/s at both c16 and c64
+([results](../results/h100/h100-pd-tcp/)), against 16.8 at c64 for two aggregated workers. `hostIPC: true` ([pd-hostipc-qwen3-8b.yaml](../deploy/pd-hostipc-qwen3-8b.yaml))
+does not change it. The cause is GPU visibility: CUDA IPC needs the importing process to see the exporting GPU, and the
+device plugin gives each pod exactly one. Before trusting any P/D number, grep the decode worker's log for `cuda_ipc`
+([Reproduce](#reproduce)).
 
-**How to read this chart.** Left: effective bandwidth of one KV transfer, log scale. Right: time per transfer, log
-scale; the dark part is descriptor posting (building and submitting the copy list), the light part is the rest.
-
-**What it shows**
-- **One GPU per pod (the normal pattern): TCP, ~2 s per 846 MiB, ~0.45 GB/s.** UCX logged 208 `tcp/eth0` lanes,
-  some `cuda_copy` (staging GPU memory through host memory) and no `cuda_ipc` at all. The NVLink counters read zero.
-- **Adding `hostIPC: true` changed nothing.** Neither did putting both workers on MIG slices of the same physical
-  GPU ([Part 5](05-autoscaling-and-mig.md)).
-- **Both GPUs visible to both pods: CUDA IPC over NVLink, 5.4 ms per 846 MiB, ~164 GB/s,** about 370x faster.
-
-Why: CUDA IPC works by the exporting process creating a handle for a GPU allocation and the importing process opening
-it on a device *it can see*. The device plugin gives each pod exactly one GPU, so the decode process cannot see the
-prefill GPU and cannot open the handle. UCX finds `cuda_ipc` unreachable, there is no RDMA NIC between the pods, and
-it falls back to TCP over the pod network without a warning. `hostIPC` shares System V and POSIX IPC namespaces, not
-GPU visibility, so it cannot help. (We infer UCX's reasoning from which transports appeared; UCX did not print why it
-rejected `cuda_ipc`.)
-
-The both-visible manifests are a **diagnostic, not a production pattern**: those pods request no GPUs, so the
-scheduler does not know they use them and could place other work on the same devices. Production options are one pod
-that owns both GPUs, or a shared device claim through Kubernetes Dynamic Resource Allocation (not tested here).
-
-**What TCP does to the service.** A prefill-heavy request carries 423 MiB of KV; at ~0.45 GB/s that is ~1 s of link
-time per request, so the deployment cannot exceed ~1 request/s whatever the load. Measured: 0.92 requests/s at both
-c16 and c64, against **9.9 and 16.8** for two aggregated workers on the same GPUs. Identical throughput at two concurrencies
-is the signature of a hard ceiling.
+Every NVLink result below uses the both-visible manifests, which are a **diagnostic, not a production pattern**: those
+pods request no GPUs, so the scheduler does not know they use them and could place other work on the same devices.
+Production options, outside this study's scope, are one pod that owns both GPUs or a shared device claim through
+Kubernetes Dynamic Resource Allocation.
 
 ### 2. With a fast link, the copy list becomes the bottleneck
 
 Over NVLink, an idle 846 MiB transfer took 5.4 ms. Under load (c=64, long prompts), a 6,000-token transfer
 (843.75 MiB) took **~93 ms**, and
 more than half of that was posting, not moving data.
+
+![Animated comparison: KV blocks of an idle engine are contiguous (36 descriptors), while under load a 6,000-token (843.75 MiB) transfer is scattered into 13,500 descriptors, each costing ~3.8 μs of CPU time to post](../figures/anim-kv-transfer.svg)
+
+> <sub><i>Under load the transfer is limited by how many spans the CPU must post, not by the link.</i></sub>
 
 **What a descriptor is.** NIXL copies a list of `(address, length, device)` spans. vLLM registers one memory region
 per layer (K and V share it) and asks for one span per block of each layer; NIXL then merges neighbouring spans into
@@ -132,10 +128,16 @@ the free-block list is shuffled, no two of a request's blocks are adjacent, and 
 **36 x 375 = 13,500** for a 6,000-token prompt (6,000 tokens / 16 tokens per block = 375 blocks).
 
 **Why that is slow.** Each descriptor costs CPU work to build and post, about **3.8 μs** here (51 ms over 13,442
-descriptors). That is the cost on this same-node NVLink path (`cuda_ipc`); RDMA transports are reported at a fraction
-of a microsecond per descriptor. Each span is one block of one layer, just 64 KiB. If posting and copying do not
+descriptors). That is the cost on this same-node NVLink path (`cuda_ipc`); vLLM issue #55434 reports about 0.2 μs per
+descriptor over InfiniBand. Each span is one block of one layer, just 64 KiB. If posting and copying do not
 overlap, posting alone caps the transfer at 64 KiB / 3.8 μs, ~17 GB/s; we measured 9.6 GB/s on a link that does 164.
 Posting explains about 51 of the ~93 ms; the other ~40 ms was not isolated.
+
+![Effective KV transfer bandwidth and time per transfer over NVLink, with the descriptor-posting share, idle and
+under load with KV blocks of 16 and 64 tokens](../figures/nixl-transfers.png)
+
+**How to read this chart.** Left: effective bandwidth of one KV transfer, log scale. Right: time per transfer, log
+scale; the dark part is descriptor posting (building and submitting the copy list), the light part is the rest.
 
 The cost also lands on users who are not transferring anything: vLLM posts these reads from the decode engine's main
 loop, so every running decode waits while a transfer is being posted. An open vLLM pull request (#45211) moves posting
@@ -145,8 +147,7 @@ to a background thread, which moves the wait to the new request's TTFT rather th
 transfer time  ~  fixed setup  +  descriptors x posting cost  +  bytes / link bandwidth
 ```
 
-The middle term only matters once the link is fast. P/D over TCP is not a deployment option in the first place:
-with transfers of seconds, posting is noise there. The same mechanism is reported upstream in vLLM issue #55434 for an
+The middle term only matters once the link is fast. The same mechanism is reported upstream in vLLM issue #55434 for an
 MLA-attention model on GB200, where a Qwen3-8B reproduction has also been posted; our H100 measurements agree.
 
 **Mitigation tested: `--block-size 64`.** Four times bigger blocks, four times fewer of them: a fully fragmented
@@ -163,9 +164,6 @@ such layout.
 <!-- BEGIN GENERATED: nixl-transfers -->
 | variant | 10 s log intervals | MiB per transfer (mean) | descriptors per transfer | transfer ms | post ms | post share | GB/s (decimal) |
 |---|---|---|---|---|---|---|---|
-| TCP (1 GPU per pod) | 3 | 846.0 | 44.0 | 1,986 | 0.61 | 0.0% | 0.45 |
-| TCP + hostIPC | 2 | 846.0 | 45.0 | 1,990 | 0.72 | 0.0% | 0.45 |
-| MIG slices (TCP) | 3 | 846.0 | 72.0 | 2,001 | 1.28 | 0.1% | 0.44 |
 | NVLink, idle | 1 | 846.0 | 36.0 | 5.4 | 1.07 | 19.7% | 163.58 |
 | NVLink, c=64 load, block 16 | 3 | 843.8 | 13,442 | 92.7 | 51.29 | 55.3% | 9.55 |
 | NVLink, c=64 load, block 64 | 13 | 715.8 | 1,854 | 20.6 | 7.87 | 38.2% | 37.67 |
@@ -178,8 +176,8 @@ fragmented 6,000-token intervals (3,384 descriptors each).
 
 ### 3. P/D against two aggregated workers on the same two GPUs
 
-![Requests per second, TTFT p50 and TPOT for aggregated x2 and the three P/D variants, by workload shape and
-concurrency](../figures/pd-vs-agg.png)
+![Requests per second, TTFT p50 and TPOT for aggregated x2 and P/D over NVLink with KV blocks of 16 and 64 tokens, by
+workload shape and concurrency](../figures/pd-vs-agg.png)
 
 **How to read this chart.** Rows: workload shapes. Columns: requests/s (higher is better), TTFT p50 (log, lower is
 better), TPOT (lower is better). "ERR" marks runs with failed requests.
@@ -192,9 +190,9 @@ better), TPOT (lower is better). "ERR" marks runs with failed requests.
 - **Decode-heavy, nothing to gain:** a 256-token prompt takes milliseconds to prefill, but in P/D it still pays a second
   network hop, a remote prefill and a transfer. TTFT at c16 is **151 ms against 44 ms**. At c64, one decode GPU carries
   all 64 streams where aggregated spreads 32 per GPU: 6.2 against 7.3 requests/s.
-- **Long:** P/D wins TTFT at c16 and loses throughput and TPOT at c64: the single decode GPU holds 64 contexts of
-  ~7,000 tokens, so we expect every decode step to read far more KV per GPU (inferred from context sizes, not
-  measured), and the transfers hit the descriptor problem.
+- **Long:** P/D wins TTFT at c16 and loses throughput and TPOT at c64: the single decode GPU carries ~60 long requests
+  (only ~55 fit at full length, section 4) where aggregated spreads them over two GPUs, so by the context sizes each
+  decode step reads up to about twice the KV per GPU, and the transfers hit the descriptor problem.
 
 <details><summary>P/D vs aggregated table</summary>
 
@@ -202,25 +200,19 @@ better), TPOT (lower is better). "ERR" marks runs with failed requests.
 | shape | c | deployment (2 GPUs each) | req/s | TTFT p50 ms | TTFT p99 ms | TPOT ms | out tok/s per GPU | tok/s per user | avg in flight | ok/err |
 |---|---|---|---|---|---|---|---|---|---|---|
 | prefill-heavy | 16 | aggregated x2 + KV router | 9.93 | 449 | 594 | 9.56 | 635 | 106.0 | 16 | 64/0 |
-| prefill-heavy | 16 | P/D 1P1D, KV over TCP | 0.92 | 16,135 | 16,291 | 9.39 | 59 | 106.5 | 16 | 64/0 |
 | prefill-heavy | 16 | P/D 1P1D, KV over NVLink | 9.98 | 205 | 1,234 | 8.82 | 638 | 113.6 | 15 | 64/0 |
 | prefill-heavy | 16 | P/D 1P1D, NVLink, KV block 64 | 9.98 | 205 | 1,226 | 8.84 | 639 | 113.2 | 15 | 64/0 |
 | prefill-heavy | 64 | aggregated x2 + KV router | 16.82 | 603 | 2,394 | 23.79 | 1,076 | 43.6 | 64 | 256/0 |
-| prefill-heavy | 64 | P/D 1P1D, KV over TCP | 0.92 | 65,078 | 118,412 | 11.71 | 59 | 91.9 | 61 | 256/0 |
 | prefill-heavy | 64 | P/D 1P1D, KV over NVLink | 12.84 | 2,878 | 4,697 | 12.70 | 822 | 81.1 | 58 | 256/0 |
 | prefill-heavy | 64 | P/D 1P1D, NVLink, KV block 64 | 12.87 | 3,315 | 4,587 | 10.21 | 824 | 98.2 | 57 (!) | 256/0 |
 | decode-heavy | 16 | aggregated x2 + KV router | 2.10 | 44 | 83 | 7.31 | 1,078 | 136.8 | 16 | 64/0 |
-| decode-heavy | 16 | P/D 1P1D, KV over TCP | 1.71 | 1,453 | 1,653 | 7.67 | 875 | 130.4 | 16 | 64/0 |
 | decode-heavy | 16 | P/D 1P1D, KV over NVLink | 2.07 | 151 | 178 | 7.39 | 1,061 | 135.3 | 16 | 64/0 |
 | decode-heavy | 64 | aggregated x2 + KV router | 7.30 | 138 | 209 | 8.36 | 3,736 | 119.6 | 63 | 256/0 |
-| decode-heavy | 64 | P/D 1P1D, KV over TCP | 4.14 | 5,422 | 6,345 | 9.58 | 2,120 | 104.7 | 61 | 256/0 |
 | decode-heavy | 64 | P/D 1P1D, KV over NVLink | 6.19 | 306 | 587 | 9.71 | 3,166 | 103.0 | 64 | 256/0 |
 | long | 16 | aggregated x2 + KV router | 1.46 | 741 | 1,277 | 10.04 | 747 | 99.7 | 16 | 64/0 |
-| long | 16 | P/D 1P1D, KV over TCP | 0.33 | 35,466 | 35,641 | 12.12 | 171 | 82.5 | 16 | 64/0 |
 | long | 16 | P/D 1P1D, KV over NVLink | 1.19 | 310 | 2,540 | 12.30 | 610 | 81.3 | 16 | 64/0 |
 | long | 16 | P/D 1P1D, NVLink, KV block 64 | 1.24 | 246 | 2,552 | 11.79 | 635 | 84.9 | 16 | 64/0 |
 | long | 64 | aggregated x2 + KV router | 2.85 | 867 | 5,053 | 20.64 | 1,460 | 48.6 | 64 | 256/0 |
-| long | 64 | P/D 1P1D, KV over TCP | 0.38 | 146,379 | 179,243 | 15.46 | 39 | 74.6 | 63 | 68/188 |
 | long | 64 | P/D 1P1D, KV over NVLink | 1.87 | 1,637 | 18,913 | 28.07 | 957 | 36.6 | 60 | 256/0 |
 | long | 64 | P/D 1P1D, NVLink, KV block 64 | 1.51 | 5,274 | 42,244 | 21.22 | 236 | 47.3 | 64 | 64/192 |
 <!-- END GENERATED -->
@@ -243,8 +235,7 @@ Received shutdown signal; unregistering endpoints from discovery
 The arithmetic: this decode GPU's log reports 388,032 tokens of KV (48 fewer than the aggregated worker's 388,080). A long request grows to 7,024 tokens, so only 55 fit at
 full length, but `--max-num-seqs 64` admits 64. Sixty-one prompts already filled ~367,000 tokens before generating
 anything. The worker stopped making progress, Dynamo's health check timed out twice, the pod was restarted, and its
-in-flight requests failed. The block-16 run of the same shape had no errors, so this is not deterministic; we saw it once with logs. The TCP
-run of the same shape also failed 188 of 256 requests with the same error, but its logs were not kept.
+in-flight requests failed. The block-16 run of the same shape had no errors; the stall was captured once, in this run.
 
 The operational lesson does not depend on the root cause: **size decode admission to KV capacity.** Set the decode
 pool's `--max-num-seqs` at or below KV tokens / (prompt + output) for your longest common request (55 here), or let
@@ -255,8 +246,8 @@ the remote prefill redone.
 
 ![Dynamo's disaggregation dashboard during the P/D tests](../evidence/screenshots/pd-disagg-dashboard.png)
 
-During the TCP run the frontend's queued requests sit near 64 and its TTFT climbs past 100 s: requests are waiting on
-the link, not on the GPUs. Decode KV usage pins at 100% in the long-prompt windows.
+In the TCP-fallback run the frontend's queued requests sit near 64 and TTFT climbs past 100 s: requests wait on the
+link, not on the GPUs. Decode KV usage pins at 100% in the long-prompt windows.
 
 One panel is wrong in a way worth knowing: Dynamo's "NVLink Bandwidth" panel read **0.00 GB/s for the whole window,
 including the NVLink runs**. Its query applies `rate()` to `DCGM_FI_PROF_NVLINK_TX_BYTES`, which DCGM already reports
@@ -265,10 +256,9 @@ the real peaks (a maximum of 6.7 GB/s on GPU 0 at 1-second resolution).
 
 ## What it means
 
-**Check the transport before you look at any P/D number.** On a single node with the standard one-GPU-per-pod spec,
-Dynamo + vLLM disaggregation runs, passes every health check, logs successful transfers, and is 18x slower than not
-disaggregating. Grep the worker log for `tcp` versus `cuda_ipc`, or divide bytes by transfer time. Across nodes the
-same question is RDMA versus TCP.
+**Check the transport before you look at any P/D number.** A fallback transport passes every health check. Grep the
+decode worker's log for `cuda_ipc` on one node or an RDMA lane (`rc_mlx5`, `dc_mlx5`, `rc_verbs`) across nodes, or
+divide bytes by transfer time.
 
 **Then make the decision from three conditions.** Disaggregation pays only when all three hold:
 
@@ -276,7 +266,7 @@ same question is RDMA versus TCP.
    chunk caps the stall (a 2,000-token chunk costs ~50 ms of compute on an H100 for this model) but makes long prompts
    take more steps ([Part 6](06-engine-tuning.md)). If one budget satisfies both targets, stay aggregated.
 2. **The KV transfer is much cheaper than the prefill it replaces.** Over NVLink, a 3,000-token prompt's 423 MiB moves
-   in ~3 ms against ~70 ms of prefill. Over TCP it takes ~1 s, about 14x more than the prefill it was meant to offload.
+   in ~3 ms against ~70 ms of prefill.
 3. **The fleet is large enough to set the prefill:decode ratio to the traffic.** With two GPUs the only split is 1:1.
    One prefill GPU here sustained ~13 prefill-heavy requests/s. An estimate for the decode side from the measured
    decode step: 127 tokens x 12.7 ms is ~1.6 s per request, so ~60 concurrent streams finish ~35 to 40 requests/s,
@@ -296,14 +286,14 @@ Dynamo 1.5.1 also has **conditional disaggregation** (`--router-conditional-disa
 and events): the router sends a request straight to a decode worker for local prefill when its effective prompt
 length, after subtracting what that decode worker already caches, is small. Per Dynamo's documentation the default
 policy also requires that ratio to be below 0.7, so a short prompt with no cached prefix still goes remote unless you
-change the policy. We did not test it.
+change the policy.
 
 ## Caveats
 
 - One run per configuration; 1 prefill + 1 decode only (no other ratios).
 - The both-visible manifests bypass the scheduler's GPU accounting; they prove the transport, not a deployment pattern.
 - NIXL numbers are 10-second log averages copied from live logs; the block-16 lines under load carry no timestamps.
-- The decode stall was seen once with logs (block 64) and once without (TCP); neither has debug logging.
+- The decode stall was captured once with logs (block 64), without debug logging.
 - Two runs (prefill-heavy c64 over NVLink, both block sizes) held 57 to 58 of 64 requests in flight, so their
   requests/s may be understated by a few percent.
 
@@ -312,13 +302,13 @@ change the policy. We did not test it.
 Only one of these deployments at a time: the both-visible variants use GPUs without telling the scheduler.
 
 ```bash
-kubectl -n dynamo-system apply -f deploy/pd-qwen3-8b.yaml
-asciinema rec -q --cols 200 --rows 50 -c "./bench/pd-evidence.sh pd-qwen3-8b" evidence/casts/pd-kv-transfer.cast
-D=$(kubectl -n dynamo-system get pods -o name | grep pd-qwen3-8b.*decodeworker | head -1)
-kubectl -n dynamo-system logs $D | grep -oE "(tcp|cuda_ipc|cuda_copy|cma)[/a-z0-9_]*" | sort | uniq -c   # which transport
-kubectl -n dynamo-system logs $D | grep "KV Transfer metrics"                                            # how fast
-kubectl -n dynamo-system exec -it aiperf -- env URL=http://pd-qwen3-8b-frontend.dynamo-system.svc:8000 \
-  CONCURRENCIES="16 64" SHAPES="prefill-heavy decode-heavy long" bash /tmp/sweep.sh h100-pd
+kubectl -n dynamo-system apply -f deploy/pd-p2p-qwen3-8b.yaml
+asciinema rec -q --cols 200 --rows 50 -c "./bench/pd-evidence.sh pdp2p-qwen3-8b" evidence/casts/pd-p2p-kv-transfer.cast
+D=$(kubectl -n dynamo-system get pods -o name | grep pdp2p-qwen3-8b.*decodeworker | head -1)
+kubectl -n dynamo-system logs $D | grep -oE "(tcp|cuda_ipc|cuda_copy|cma|rc_mlx5|dc_mlx5|rc_verbs)[/a-z0-9_]*" | sort | uniq -c   # which transport
+kubectl -n dynamo-system logs $D | grep "KV Transfer metrics"                                                    # how fast
+kubectl -n dynamo-system exec -it aiperf -- env URL=http://pdp2p-qwen3-8b-frontend.dynamo-system.svc:8000 \
+  CONCURRENCIES="16 64" SHAPES="prefill-heavy decode-heavy long" bash /tmp/sweep.sh h100-pd-nvlink
 ```
 
 Next: [Part 5, MIG slices and autoscaling between pools](05-autoscaling-and-mig.md).

@@ -15,7 +15,7 @@ time-to-first-token, time-per-token, throughput and capacity. Every result is ex
 principles: how many bytes and FLOPs each engine step needs, and what the GPU can supply. Every chart is regenerated
 from the raw benchmark exports in this repository.
 
-<img src="figures/anim-request-journey.svg" width="100%" alt="Animated diagram of one request: client, Dynamo frontend and KV router, prefill GPU, KV transfer over NIXL, decode GPU, tokens streaming back through the frontend, and the Dynamo planner below. Brackets mark where TTFT accrues (everything before the first token, never under ~43 ms here) and where TPOT accrues (each decode step). Five stops light up with the time measured there and a knob we turned: routing takes ~0.1 ms when nothing queues and --router-prefill-load-scale 10 raised the prefix hit rate from 0.64 to 0.89 on H100; a 3,000-token prompt keeps an H100 busy ~70 ms and, on one shared GPU at 64 users, a chunk budget of 512 cut TPOT from 43.7 to 17.6 ms while TTFT p50 rose from 0.6 to 4.8 s; a 6,000-token KV transfer takes 5.4 ms on idle NVLink and ~93 ms under load, more than half of it CPU descriptor posting, and --block-size 64 cut the loaded transfer to ~26 ms; a decode step takes 6.85 to 9.94 ms and FP8 weights cut TPOT 29% at 16 users; each planner move takes 2 to 3 minutes. The loop ends on measured end-to-end results on 2 H100s with prompt-heavy traffic: at 16 users the prefill/decode split improves TTFT p50 and TPOT, at 64 users it halves TPOT while TTFT p50 grows 4.8x and throughput falls 24%">
+<img src="figures/anim-request-journey.svg" width="100%" alt="Animated diagram of one request: client, Dynamo frontend and KV router, prefill GPU, KV transfer over NIXL, decode GPU, tokens streaming back through the frontend, and the Dynamo planner below. Brackets mark where TTFT accrues (everything before the first token, never under ~43 ms here) and where TPOT accrues (each decode step). Five stops light up with the time measured there and a knob we turned: routing takes ~0.1 ms when nothing queues and --router-prefill-load-scale 10 raised the prefix hit rate from 0.64 to 0.89 on H100; a 3,000-token prompt keeps an H100 busy ~70 ms and, on one shared GPU at 64 prompt-heavy users, a chunk budget of 512 cut TPOT from 43.7 to 17.6 ms while TTFT p50 rose from 0.6 to 4.8 s; a ~6,000-token KV transfer takes 5.4 ms on idle NVLink and ~93 ms under load, more than half of it CPU descriptor posting, and --block-size 64 cut the loaded transfer to ~26 ms; a decode step with short prompts takes 6.85 to 9.94 ms and FP8 weights cut TPOT 29% at 16 short-prompt users; each planner move takes about 2 to 3 minutes. The loop ends on measured end-to-end results on 2 H100s with prompt-heavy traffic: at 16 users the prefill/decode split improves TTFT p50 and TPOT, at 64 users it halves TPOT while TTFT p50 grows 4.8x and throughput falls 24%">
 
 > <sub><i>Tuning one stage often trades TTFT against TPOT; only end-to-end runs show the net effect.</i></sub>
 
@@ -33,23 +33,31 @@ from the raw benchmark exports in this repository.
 - **Decode step time is bytes / bandwidth.** One constant (about two thirds, 66.5%, of the H100's peak bandwidth) predicts every measured
   decode step within 3%. Batching shares the weight read across requests, so going from 1 to 64 users multiplied
   throughput 43x while each stream slowed 31%. ([Foundations](docs/00-foundations.md))
-- **Long prompts stall everyone else's stream.** With 64 prompt-heavy requests on one H100, most token gaps were 17 ms
-  but one in ten was ~200 ms, about what a step that also carries an 8,192-token prompt chunk should take. 61% of mean
-  time-per-token lies above the median gap, which we attribute to those mixed steps. ([Part 2](docs/02-aggregated-serving.md))
+- **Long prompts stall everyone else's stream.** With 64 prompt-heavy requests on one H100, half the token gaps were
+  17 ms or less but one in ten was ~200 ms, matching the ~190 ms that arithmetic gives for a step carrying a full
+  8,192-token prompt chunk. 61% of mean time-per-token lies above the median gap, which we attribute to those mixed
+  steps. ([Part 2](docs/02-aggregated-serving.md))
 - **KV-aware routing needs tuning to pay.** Dynamo's default router barely beat round-robin (0.64 against 0.54 prefix
   hit rate on H100, 0.69 against 0.55 on A100); one flag raised it to 0.89 and 0.90. Whether hits lower latency depends on whether a miss costs more than the
   ~43 ms minimum TTFT this stack showed even for short prompts. ([Part 3](docs/03-kv-aware-routing.md))
-- **Disaggregation on a standard Kubernetes pod spec silently moves the KV cache over TCP,** 370x slower than NVLink,
-  and serves 18x less traffic than not disaggregating. With NVLink it halves time-per-token on prompt-heavy load, and
-  then CPU-side descriptor posting becomes the transfer bottleneck (a mechanism reported upstream as vLLM issue #55434;
-  we measured it on a GQA model). ([Part 4](docs/04-pd-disaggregation.md))
-- **Autoscaling moves GPUs between prefill and decode pools only by deleting and cold-starting pods** (2 to 3
-  minutes each), and a slow KV transfer makes the planner move capacity the wrong way. ([Part 5](docs/05-autoscaling-and-mig.md))
+- **Splitting prefill and decode across GPUs halves time-per-token on prompt-heavy load at 64 users, but one prefill
+  GPU then caps TTFT and throughput** (TTFT p50 4.8x, requests/s -24%; at 16 users it wins TTFT p50 and TPOT at equal throughput). Check the transport
+  first: on one node without RDMA, a standard Kubernetes pod spec silently moves the KV cache over TCP. Over NVLink, CPU-side descriptor
+  posting becomes the transfer bottleneck (reported upstream as vLLM issue #55434; measured here on a GQA model).
+  ([Part 4](docs/04-pd-disaggregation.md))
+- **Autoscaling moves GPUs between prefill and decode pools only by deleting and cold-starting pods** (about 2 to
+  3 minutes each), and a slow KV transfer makes the planner move capacity the wrong way. ([Part 5](docs/05-autoscaling-and-mig.md))
 - **One well-tuned H100 matched a two-GPU prefill/decode pair on throughput.** FP8 weights cut time-per-token ~29%,
   an FP8 KV cache raised long-context throughput 37%, and the chunk budget trades one latency for the other.
   ([Part 6](docs/06-engine-tuning.md))
 - **Several measurements lied before they were checked,** most importantly a load generator that delivered 47 of 64
   requested concurrent requests. The [findings](docs/08-findings.md#what-we-got-wrong-first) list every correction.
+
+<p align="center">
+<img src="figures/anim-agg-vs-disagg.svg" width="100%" alt="Animated comparison on the same two H100s with prompt-heavy traffic at 64 concurrent users: aggregated, each GPU runs prompt chunks inside its decode steps so every decoding user on that GPU waits (TPOT 23.8 ms, TTFT p50 603 ms, 16.8 requests/s); split into one prefill and one decode GPU, the decode GPU only decodes (TPOT 12.7 ms) while prompts queue for the single prefill GPU and their KV cache crosses NVLink (TTFT p50 2,878 ms, 12.8 requests/s); at 16 users the split wins both TTFT p50 (205 vs 449 ms) and TPOT (8.8 vs 9.6 ms)">
+</p>
+
+> <sub><i>Disaggregation is a trade, not an upgrade: once the prefill pool saturates, it buys TPOT with TTFT and throughput.</i></sub>
 
 ## Which knob moves which metric
 
@@ -63,11 +71,31 @@ baseline; the linked parts give the conditions.
 | Smaller chunk budget | Longest possible step | Better below saturation, much worse at saturation | Much better under prompt-heavy load | Slightly worse at saturation | Chat with a TPOT target ([Part 6](docs/06-engine-tuning.md#tokens-per-step-the-chunk-budget)) |
 | FP8 weights | Weight bytes per step | Better | Better (~29%) | Better | Bandwidth-bound decode, after an accuracy check ([Part 6](docs/06-engine-tuning.md#bytes-per-step-fp8-weights)) |
 | FP8 KV cache | KV bytes and capacity | Much better when KV is full | Better at long context | Better at long context (+37%) | Long contexts, many concurrent requests ([Part 6](docs/06-engine-tuning.md#bytes-per-step-the-fp8-kv-cache)) |
-| Speculative decoding | Tokens per weight read | Same at low load, better at high load (shorter decode steps) | Much better at low load, less at high load | Better (n-gram +45% at c64, synthetic text) | Low-concurrency, latency-sensitive streams; verify on real text ([Part 6](docs/06-engine-tuning.md#tokens-emitted-per-step-speculative-decoding)) |
-| KV-aware routing + load scale 10 | Prefill work avoided | Better when a miss is expensive | Slightly better | Better (less prefill) | Shared system prompts, RAG, multi-turn chat ([Part 3](docs/03-kv-aware-routing.md)) |
-| Router queue threshold | Placement under overload | Better tails (p90 2.4x) | Slightly worse (+8%) | Same | Running near saturation ([Part 3](docs/03-kv-aware-routing.md#under-overload-router-side-queueing)) |
+| Speculative decoding | Tokens per weight read | Same at low load, better at high load | Much better at low load, less at high load | Better (n-gram +45% at c64 with 53 of 64 in flight, synthetic text) | Low-concurrency, latency-sensitive streams; verify on real text ([Part 6](docs/06-engine-tuning.md#tokens-emitted-per-step-speculative-decoding)) |
+| KV-aware routing + load scale 10 | Prefill work avoided | Better when a miss is expensive | Better (ITL -13% vs round-robin) | Less prefill work per request | Shared system prompts, RAG, multi-turn chat ([Part 3](docs/03-kv-aware-routing.md)) |
+| Router queue threshold | Placement under overload | Better tails (p90 2.4x) | Slightly worse (+8%) | Not reported | Running near saturation ([Part 3](docs/03-kv-aware-routing.md#under-overload-router-side-queueing)) |
 | Prefill/decode disaggregation | Interference | Better at moderate load, worse for short prompts | Much better under prompt-heavy load | Worse at a fixed 1:1 ratio | Long prompts with a TPOT target, **only over NVLink or RDMA** ([Part 4](docs/04-pd-disaggregation.md)) |
 | Planner (pool autoscaling) | Prefill:decode ratio over time | Depends on cold starts | Depends | Follows traffic, slowly | Traffic that shifts over tens of minutes or more ([Part 5](docs/05-autoscaling-and-mig.md)) |
+
+## Apply it to your model and GPU
+
+The milliseconds belong to Qwen3-8B on an H100; the method transfers. A few numbers from your model config and GPU
+spec sheet predict most of what this study measured ([Foundations](docs/00-foundations.md#2-the-numbers-for-our-model-and-gpu)):
+
+| Quantity | Formula | Qwen3-8B on H100 |
+|---|---|---|
+| KV cache per token | layers x 2 (K and V) x KV heads x head dim x bytes per value | 147,456 B |
+| Decode step time | (weight bytes + batch x average context x KV bytes per token) / achieved bandwidth ([model](docs/00-foundations.md#4-a-decode-step-time-model-that-predicts-our-measurements)) | 6.85 ms at batch 1; achieved bandwidth 66.5% of peak |
+| Prefill FLOPs per prompt token | about 2 x non-embedding parameters, plus attention | ~14.8 GFLOP |
+| Requests that fit in KV | KV cache tokens / (prompt + output tokens, rounded up to whole KV blocks) | 388,080 tokens: ~123 prompt-heavy, ~55 long requests |
+
+**What transfers:** the direction of each knob in the table above and the conditions under which it pays. Decode is
+bandwidth-bound and prefill compute-bound ([the roofline](docs/00-foundations.md#3-the-roofline-where-each-kind-of-step-sits)),
+so fewer bytes per step shortens decode steps, prompt
+chunks stall decoding wherever both share a step, and disaggregation needs a fast KV path and a prefill pool sized to
+the traffic. **What to re-measure:** the milliseconds, the concurrency at which a knob starts to pay or hurt, and
+prefix hit rates, which depend on your traffic. Fit the achieved bandwidth once from TPOT at batch 1, and the step
+model predicts decode steps at other batch sizes and context lengths.
 
 ## The stack, and who manages what
 

@@ -48,7 +48,6 @@ RUNS = {
     "a100-mbt8192":   ("a100", "mbt8192",               1, "A100 BF16, chunk 8192"),
     "h100-agg":       ("h100", "h100-agg-baseline",     1, "H100 BF16"),
     "agg2":           ("h100", "h100-agg2",             2, "aggregated x2 + KV router"),
-    "pd-tcp":         ("h100", "h100-pd-tcp",           2, "P/D 1P1D, KV over TCP"),
     "pd-nvlink":      ("h100", "h100-pd-nvlink",        2, "P/D 1P1D, KV over NVLink"),
     "pd-nvlink-bs64": ("h100", "h100-pd-nvlink-bs64",   2, "P/D 1P1D, NVLink, KV block 64"),
     "base":           ("h100", "h100-agg-base",         1, "BF16 baseline (chunk 8192 = H100 default)"),
@@ -550,7 +549,7 @@ def fig_kv():
 
 # ---------------------------------------------------------------- 3. P/D vs aggregated
 def fig_pd():
-    keys = ["agg2", "pd-tcp", "pd-nvlink", "pd-nvlink-bs64"]
+    keys = ["agg2", "pd-nvlink", "pd-nvlink-bs64"]
     rows = []
     for shape in ("prefill-heavy", "decode-heavy", "long"):
         for c in (16, 64):
@@ -573,7 +572,7 @@ def fig_pd():
                     p = point(k, shape, c)
                     vals.append(p[m] if p else 0)
                     errs.append(p["n_err"] if p else 0)
-                bars = ax.bar(x + (i - 1.5) * 0.2, vals, 0.2, color=PAL[i], label=RUNS[k][3])
+                bars = ax.bar(x + (i - 1) * 0.25, vals, 0.25, color=PAL[i], label=RUNS[k][3])
                 ax.bar_label(bars, labels=[("ERR " if e else "") + (f(v, 1) if v < 100 else f(v, 0)) if v else "n/a"
                                            for v, e in zip(vals, errs)], fontsize=6, rotation=90, padding=2)
             if logy:
@@ -585,15 +584,14 @@ def fig_pd():
             ax.grid(axis="y", alpha=0.3)
             ax.margins(y=0.25)
     axs[0][0].legend(fontsize=7, loc="upper left")
-    fig.suptitle("Same 2 H100s: two aggregated workers vs 1 prefill + 1 decode, by KV transport. "
+    fig.suptitle("Same 2 H100s: two aggregated workers vs 1 prefill + 1 decode with KV over NVLink. "
                  "'ERR' = the run had failed requests.", fontsize=11, x=0.01, ha="left")
     fig.tight_layout()
     save(fig, "pd-vs-agg")
 
     pat = re.compile(r"Avg xfer time \(ms\)=([0-9.]+).*?Avg post time \(ms\)=([0-9.]+).*?Avg MB per transfer=([0-9.]+), "
                      r"Throughput \(MB/s\)=([0-9.]+), Avg number of descriptors=([0-9.]+)")
-    groups = {"TCP (1 GPU per pod)": [], "TCP + hostIPC": [], "MIG slices (TCP)": [], "NVLink, idle": [],
-              "NVLink, c=64 load, block 16": [], "NVLink, c=64 load, block 64": []}
+    groups = {"NVLink, idle": [], "NVLink, c=64 load, block 16": [], "NVLink, c=64 load, block 64": []}
     for ln in (LOGS / "pd-nixl-xfer-metrics.log").read_text().splitlines():
         m = pat.search(ln)
         if not m:
@@ -603,9 +601,8 @@ def fig_pd():
         if not t:
             groups["NVLink, c=64 load, block 16"].append(v)       # lines captured without timestamps
             continue
-        minute = int(t.group(1))                                 # variant order is documented in the log header
-        groups["TCP (1 GPU per pod)" if minute < 2 else "TCP + hostIPC" if minute < 10 else
-               "NVLink, idle" if minute < 60 else "MIG slices (TCP)"].append(v)
+        if 10 <= int(t.group(1)) < 60:                         # the idle NVLink interval; the other timestamped
+            groups["NVLink, idle"].append(v)                     # lines are the TCP-fallback variants (log header)
     with gzip.open(LOGS / "pd-bs64-decode-stall.log.gz", "rt") as fh:
         for ln in fh:
             m = pat.search(ln)
@@ -625,7 +622,7 @@ def fig_pd():
                                       "transfer ms", "post ms", "post share", "GB/s (decimal)"], rows))
     fig, axs = plt.subplots(1, 2, figsize=(15, 4.8))
     y = np.arange(len(labels))
-    axs[0].barh(y, bw, color=[PAL[2] if "TCP" in l else PAL[0] for l in labels])
+    axs[0].barh(y, bw, color=PAL[0])
     for i, v in enumerate(bw):
         axs[0].text(v * 1.1, i, f"{v:.2f} GB/s", va="center", fontsize=8)
     axs[0].set_xscale("log")
@@ -639,6 +636,7 @@ def fig_pd():
     for i, (p, x_) in enumerate(zip(post, xfer)):
         axs[1].text(x_ * 1.1, i, f"{x_:.1f} ms ({100 * p / x_:.1f}% posting)", va="center", fontsize=8)
     axs[1].set_xscale("log")
+    axs[1].set_xlim(left=0.3)                # keep the idle transfer's ~1 ms of posting on the axis
     axs[1].set_yticks(y)
     axs[1].set_yticklabels([])
     axs[1].invert_yaxis()

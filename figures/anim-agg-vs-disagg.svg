@@ -1,0 +1,312 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" role="img">
+<style>
+  .bg { fill: #ffffff; }
+  .ink { fill: #1f2328; } .muted { fill: #57606a; } .boxink { fill: #1f2328; }
+  .line { stroke: #8c959f; }
+  .client { fill: #eef1f4; stroke: #57606a; }
+  .dynamo { fill: #dbeafe; stroke: #1f6feb; }
+  .gpu { fill: #e8f5d0; stroke: #4c8c00; }
+  .kvbox { fill: #efe4ff; stroke: #8250df; }
+  .prefill { fill: #fde7c9; stroke: #e07b00; }
+  .decode { fill: #cfe8a9; stroke: #4c8c00; }
+  .wait { fill: #ffd8d3; stroke: #cf222e; }
+  .c-blue { fill: #1f6feb; } .c-green { fill: #4c8c00; } .c-orange { fill: #e07b00; }
+  .c-purple { fill: #8250df; } .c-red { fill: #cf222e; }
+  .s-purple { stroke: #8250df; } .s-red { stroke: #cf222e; }
+  text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  .title { font-size: 17px; font-weight: 600; }
+  .label { font-size: 13px; } .small { font-size: 11.5px; } .bold { font-weight: 600; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #0d1117; }
+    .ink { fill: #e6edf3; } .muted { fill: #9198a1; }
+    .line { stroke: #6e7681; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+    .motion { display: none; }
+  }
+
+  .t20 { font-size: 20px; } .t18 { font-size: 18px; } .t16 { font-size: 16px; } .t15 { font-size: 15px; }
+  .t14 { font-size: 14px; } .t13 { font-size: 13.5px; }
+  .c-white { fill: #ffffff; } .halo { fill: none; stroke: #cf222e; stroke-width: 4px; }
+  .ring { fill: none; stroke: #cf222e; stroke-width: 2.5px; transform-box: fill-box; transform-origin: center; }
+  .s-orange { stroke: #e07b00; } .s-green { stroke: #4c8c00; } .s-blue { stroke: #1f6feb; }
+  .still { display: none; }
+  @media (prefers-reduced-motion: reduce) { .still { display: inline; } }
+  @keyframes ta00 { 0.00% { opacity: 0.18; } 2.18% { opacity: 0.18; } 2.19% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta01 { 0.00% { opacity: 0.18; } 3.13% { opacity: 0.18; } 3.14% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta02 { 0.00% { opacity: 0.18; } 4.07% { opacity: 0.18; } 4.08% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta03 { 0.00% { opacity: 0.18; } 7.85% { opacity: 0.18; } 7.86% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta04 { 0.00% { opacity: 0.18; } 8.80% { opacity: 0.18; } 8.81% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta05 { 0.00% { opacity: 0.18; } 9.74% { opacity: 0.18; } 9.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta06 { 0.00% { opacity: 0.18; } 10.69% { opacity: 0.18; } 10.70% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta07 { 0.00% { opacity: 0.18; } 11.63% { opacity: 0.18; } 11.64% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta08 { 0.00% { opacity: 0.18; } 12.58% { opacity: 0.18; } 12.59% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta09 { 0.00% { opacity: 0.18; } 16.35% { opacity: 0.18; } 16.36% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta010 { 0.00% { opacity: 0.18; } 17.30% { opacity: 0.18; } 17.31% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta011 { 0.00% { opacity: 0.18; } 18.24% { opacity: 0.18; } 18.25% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta012 { 0.00% { opacity: 0.18; } 19.19% { opacity: 0.18; } 19.20% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta013 { 0.00% { opacity: 0.18; } 20.13% { opacity: 0.18; } 20.14% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta014 { 0.00% { opacity: 0.18; } 21.08% { opacity: 0.18; } 21.09% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta015 { 0.00% { opacity: 0.18; } 22.02% { opacity: 0.18; } 22.03% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta016 { 0.00% { opacity: 0.18; } 22.97% { opacity: 0.18; } 22.98% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta10 { 0.00% { opacity: 0.18; } 2.18% { opacity: 0.18; } 2.19% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta11 { 0.00% { opacity: 0.18; } 3.13% { opacity: 0.18; } 3.14% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta12 { 0.00% { opacity: 0.18; } 4.07% { opacity: 0.18; } 4.08% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta13 { 0.00% { opacity: 0.18; } 5.02% { opacity: 0.18; } 5.03% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta14 { 0.00% { opacity: 0.18; } 5.96% { opacity: 0.18; } 5.97% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta15 { 0.00% { opacity: 0.18; } 9.74% { opacity: 0.18; } 9.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta16 { 0.00% { opacity: 0.18; } 10.69% { opacity: 0.18; } 10.70% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta17 { 0.00% { opacity: 0.18; } 11.63% { opacity: 0.18; } 11.64% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta18 { 0.00% { opacity: 0.18; } 12.58% { opacity: 0.18; } 12.59% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta19 { 0.00% { opacity: 0.18; } 13.52% { opacity: 0.18; } 13.53% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta110 { 0.00% { opacity: 0.18; } 14.47% { opacity: 0.18; } 14.48% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta111 { 0.00% { opacity: 0.18; } 15.41% { opacity: 0.18; } 15.42% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta112 { 0.00% { opacity: 0.18; } 19.19% { opacity: 0.18; } 19.20% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta113 { 0.00% { opacity: 0.18; } 20.13% { opacity: 0.18; } 20.14% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta114 { 0.00% { opacity: 0.18; } 21.08% { opacity: 0.18; } 21.09% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta115 { 0.00% { opacity: 0.18; } 22.02% { opacity: 0.18; } 22.03% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes ta116 { 0.00% { opacity: 0.18; } 22.97% { opacity: 0.18; } 22.98% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes kv0 { 0.00% { opacity: 0; transform: translate(256px, 286px); } 36.40% { opacity: 0; transform: translate(256px, 286px); } 36.41% { opacity: 1; transform: translate(256px, 286px); } 37.91% { opacity: 1; transform: translate(256px, 304px); } 37.94% { opacity: 0; transform: translate(256px, 304px); } 100.00% { opacity: 0; transform: translate(256px, 304px); } }
+  @keyframes kv1 { 0.00% { opacity: 0; transform: translate(318px, 286px); } 39.06% { opacity: 0; transform: translate(318px, 286px); } 39.07% { opacity: 1; transform: translate(318px, 286px); } 40.57% { opacity: 1; transform: translate(318px, 304px); } 40.60% { opacity: 0; transform: translate(318px, 304px); } 100.00% { opacity: 0; transform: translate(318px, 304px); } }
+  @keyframes kv2 { 0.00% { opacity: 0; transform: translate(380px, 286px); } 41.73% { opacity: 0; transform: translate(380px, 286px); } 41.74% { opacity: 1; transform: translate(380px, 286px); } 43.24% { opacity: 1; transform: translate(380px, 304px); } 43.26% { opacity: 0; transform: translate(380px, 304px); } 100.00% { opacity: 0; transform: translate(380px, 304px); } }
+  @keyframes kv3 { 0.00% { opacity: 0; transform: translate(442px, 286px); } 44.39% { opacity: 0; transform: translate(442px, 286px); } 44.40% { opacity: 1; transform: translate(442px, 286px); } 45.90% { opacity: 1; transform: translate(442px, 304px); } 45.92% { opacity: 0; transform: translate(442px, 304px); } 100.00% { opacity: 0; transform: translate(442px, 304px); } }
+  @keyframes kv4 { 0.00% { opacity: 0; transform: translate(504px, 286px); } 47.05% { opacity: 0; transform: translate(504px, 286px); } 47.06% { opacity: 1; transform: translate(504px, 286px); } 48.56% { opacity: 1; transform: translate(504px, 304px); } 48.59% { opacity: 0; transform: translate(504px, 304px); } 100.00% { opacity: 0; transform: translate(504px, 304px); } }
+  @keyframes kv5 { 0.00% { opacity: 0; transform: translate(566px, 286px); } 49.71% { opacity: 0; transform: translate(566px, 286px); } 49.72% { opacity: 1; transform: translate(566px, 286px); } 51.22% { opacity: 1; transform: translate(566px, 304px); } 51.25% { opacity: 0; transform: translate(566px, 304px); } 100.00% { opacity: 0; transform: translate(566px, 304px); } }
+  @keyframes kv6 { 0.00% { opacity: 0; transform: translate(628px, 286px); } 52.38% { opacity: 0; transform: translate(628px, 286px); } 52.39% { opacity: 1; transform: translate(628px, 286px); } 53.89% { opacity: 1; transform: translate(628px, 304px); } 53.91% { opacity: 0; transform: translate(628px, 304px); } 100.00% { opacity: 0; transform: translate(628px, 304px); } }
+  @keyframes kv7 { 0.00% { opacity: 0; transform: translate(690px, 286px); } 55.04% { opacity: 0; transform: translate(690px, 286px); } 55.05% { opacity: 1; transform: translate(690px, 286px); } 56.55% { opacity: 1; transform: translate(690px, 304px); } 56.57% { opacity: 0; transform: translate(690px, 304px); } 100.00% { opacity: 0; transform: translate(690px, 304px); } }
+  @keyframes q0 { 0.00% { opacity: 0; } 36.74% { opacity: 0; } 36.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0; } }
+  @keyframes q1 { 0.00% { opacity: 0; } 40.74% { opacity: 0; } 40.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0; } }
+  @keyframes q2 { 0.00% { opacity: 0; } 44.74% { opacity: 0; } 44.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0; } }
+  @keyframes q3 { 0.00% { opacity: 0; } 48.74% { opacity: 0; } 48.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0; } }
+  @keyframes q4 { 0.00% { opacity: 0; } 52.74% { opacity: 0; } 52.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0; } }
+  @keyframes tb0 { 0.00% { opacity: 0.18; } 34.68% { opacity: 0.18; } 34.69% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb1 { 0.00% { opacity: 0.18; } 35.63% { opacity: 0.18; } 35.64% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb2 { 0.00% { opacity: 0.18; } 36.57% { opacity: 0.18; } 36.58% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb3 { 0.00% { opacity: 0.18; } 37.52% { opacity: 0.18; } 37.53% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb4 { 0.00% { opacity: 0.18; } 38.46% { opacity: 0.18; } 38.47% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb5 { 0.00% { opacity: 0.18; } 39.41% { opacity: 0.18; } 39.42% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb6 { 0.00% { opacity: 0.18; } 40.35% { opacity: 0.18; } 40.36% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb7 { 0.00% { opacity: 0.18; } 41.30% { opacity: 0.18; } 41.31% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb8 { 0.00% { opacity: 0.18; } 42.24% { opacity: 0.18; } 42.25% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb9 { 0.00% { opacity: 0.18; } 43.19% { opacity: 0.18; } 43.20% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb10 { 0.00% { opacity: 0.18; } 44.13% { opacity: 0.18; } 44.14% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb11 { 0.00% { opacity: 0.18; } 45.08% { opacity: 0.18; } 45.09% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb12 { 0.00% { opacity: 0.18; } 46.02% { opacity: 0.18; } 46.03% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb13 { 0.00% { opacity: 0.18; } 46.97% { opacity: 0.18; } 46.98% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb14 { 0.00% { opacity: 0.18; } 47.91% { opacity: 0.18; } 47.92% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb15 { 0.00% { opacity: 0.18; } 48.85% { opacity: 0.18; } 48.86% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb16 { 0.00% { opacity: 0.18; } 49.80% { opacity: 0.18; } 49.81% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb17 { 0.00% { opacity: 0.18; } 50.74% { opacity: 0.18; } 50.75% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb18 { 0.00% { opacity: 0.18; } 51.69% { opacity: 0.18; } 51.70% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb19 { 0.00% { opacity: 0.18; } 52.63% { opacity: 0.18; } 52.64% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb20 { 0.00% { opacity: 0.18; } 53.58% { opacity: 0.18; } 53.59% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb21 { 0.00% { opacity: 0.18; } 54.52% { opacity: 0.18; } 54.53% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes tb22 { 0.00% { opacity: 0.18; } 55.47% { opacity: 0.18; } 55.48% { opacity: 1; } 99.00% { opacity: 1; } 100.00% { opacity: 0.18; } }
+  @keyframes phA { 0.00% { opacity: 0; transform: translate(200px, 0px); } 1.24% { opacity: 0; transform: translate(200px, 0px); } 1.25% { opacity: 1; transform: translate(200px, 0px); } 23.75% { opacity: 1; transform: translate(724px, 0px); } 23.77% { opacity: 0; transform: translate(724px, 0px); } 100.00% { opacity: 0; transform: translate(724px, 0px); } }
+  @keyframes phB { 0.00% { opacity: 0; transform: translate(200px, 0px); } 33.74% { opacity: 0; transform: translate(200px, 0px); } 33.75% { opacity: 1; transform: translate(200px, 0px); } 56.25% { opacity: 1; transform: translate(724px, 0px); } 56.27% { opacity: 0; transform: translate(724px, 0px); } 100.00% { opacity: 0; transform: translate(724px, 0px); } }
+  @keyframes hlA { 0.00% { opacity: 0; } 0.75% { opacity: 0; } 1.38% { opacity: 0.9; } 32.88% { opacity: 0.9; } 33.50% { opacity: 0; } 100.00% { opacity: 0; } }
+  @keyframes hlB { 0.00% { opacity: 0; } 33.75% { opacity: 0; } 34.38% { opacity: 0.9; } 67.88% { opacity: 0.9; } 68.50% { opacity: 0; } 100.00% { opacity: 0; } }
+  @keyframes hlM1 { 0.00% { opacity: 0; } 68.75% { opacity: 0; } 69.38% { opacity: 0.9; } 99.25% { opacity: 0.9; } 99.88% { opacity: 0; } 100.00% { opacity: 0; } }
+  @keyframes hlM2 { 0.00% { opacity: 0; } 68.75% { opacity: 0; } 69.38% { opacity: 0.9; } 99.25% { opacity: 0.9; } 99.88% { opacity: 0; } 100.00% { opacity: 0; } }
+  @keyframes co1 { 0.00% { opacity: 0; } 0.75% { opacity: 0; } 1.38% { opacity: 1; } 32.88% { opacity: 1; } 33.50% { opacity: 0; } 100.00% { opacity: 0; } }
+  @keyframes co2 { 0.00% { opacity: 0; } 33.75% { opacity: 0; } 34.38% { opacity: 1; } 67.88% { opacity: 1; } 68.50% { opacity: 0; } 100.00% { opacity: 0; } }
+  @keyframes co3 { 0.00% { opacity: 0; } 68.75% { opacity: 0; } 69.38% { opacity: 1; } 99.25% { opacity: 1; } 99.88% { opacity: 0; } 100.00% { opacity: 0; } }</style>
+<rect class="bg" x="0" y="0" width="960" height="560" rx="10"/>
+<defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8c959f"/></marker></defs>
+<text class="ink t20 bold" x="24" y="34">Same traffic, same two H100s: aggregated or split?</text>
+<text class="muted t15" x="24" y="56">Prompt-heavy traffic (3,000-token prompts, 128 output tokens), 64 concurrent users, Qwen3-8B. Measured results on the right.</text>
+<rect class="decode" x="24" y="68" width="14" height="12" rx="2" stroke-width="1"/>
+<text class="muted t13" x="44" y="79">decode step</text>
+<rect class="prefill" x="137.2" y="68" width="14" height="12" rx="2" stroke-width="1"/>
+<text class="muted t13" x="157.2" y="79">prompt work</text>
+<rect class="kvbox" x="250.39999999999998" y="68" width="14" height="12" rx="2" stroke-width="1"/>
+<text class="muted t13" x="270.4" y="79">KV cache</text>
+<rect class="wait" x="342.0" y="68" width="14" height="12" rx="2" stroke-width="1"/>
+<text class="muted t13" x="362.0" y="79">every decoding user on that GPU waits</text>
+<text class="ink t16 bold" x="24" y="106">Aggregated: each GPU prefills and decodes; the KV router spreads requests</text>
+<text class="ink t14 bold" x="24" y="135">GPU 0</text>
+<rect class="decode" x="201" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="218" cy="154" r="4" style="animation: ta00 40.00s linear infinite;"/>
+<rect class="decode" x="223" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="240" cy="154" r="4" style="animation: ta01 40.00s linear infinite;"/>
+<rect class="decode" x="245" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="262" cy="154" r="4" style="animation: ta02 40.00s linear infinite;"/>
+<rect class="prefill" x="267" y="116" width="86" height="20" rx="3" stroke-width="1"/>
+<rect class="decode" x="267" y="136" width="86" height="8" rx="2" stroke-width="1"/>
+<rect class="wait" x="267" y="148" width="86" height="12" rx="2" stroke-width="1"/>
+<circle class="c-green" cx="350" cy="154" r="4" style="animation: ta03 40.00s linear infinite;"/>
+<rect class="decode" x="355" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="372" cy="154" r="4" style="animation: ta04 40.00s linear infinite;"/>
+<rect class="decode" x="377" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="394" cy="154" r="4" style="animation: ta05 40.00s linear infinite;"/>
+<rect class="decode" x="399" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="416" cy="154" r="4" style="animation: ta06 40.00s linear infinite;"/>
+<rect class="decode" x="421" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="438" cy="154" r="4" style="animation: ta07 40.00s linear infinite;"/>
+<rect class="decode" x="443" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="460" cy="154" r="4" style="animation: ta08 40.00s linear infinite;"/>
+<rect class="prefill" x="465" y="116" width="86" height="20" rx="3" stroke-width="1"/>
+<rect class="decode" x="465" y="136" width="86" height="8" rx="2" stroke-width="1"/>
+<rect class="wait" x="465" y="148" width="86" height="12" rx="2" stroke-width="1"/>
+<circle class="c-green" cx="548" cy="154" r="4" style="animation: ta09 40.00s linear infinite;"/>
+<rect class="decode" x="553" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="570" cy="154" r="4" style="animation: ta010 40.00s linear infinite;"/>
+<rect class="decode" x="575" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="592" cy="154" r="4" style="animation: ta011 40.00s linear infinite;"/>
+<rect class="decode" x="597" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="614" cy="154" r="4" style="animation: ta012 40.00s linear infinite;"/>
+<rect class="decode" x="619" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="636" cy="154" r="4" style="animation: ta013 40.00s linear infinite;"/>
+<rect class="decode" x="641" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="658" cy="154" r="4" style="animation: ta014 40.00s linear infinite;"/>
+<rect class="decode" x="663" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="680" cy="154" r="4" style="animation: ta015 40.00s linear infinite;"/>
+<rect class="decode" x="685" y="116" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="702" cy="154" r="4" style="animation: ta016 40.00s linear infinite;"/>
+<text class="ink t14 bold" x="24" y="185">GPU 1</text>
+<rect class="decode" x="201" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="218" cy="204" r="4" style="animation: ta10 40.00s linear infinite;"/>
+<rect class="decode" x="223" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="240" cy="204" r="4" style="animation: ta11 40.00s linear infinite;"/>
+<rect class="decode" x="245" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="262" cy="204" r="4" style="animation: ta12 40.00s linear infinite;"/>
+<rect class="decode" x="267" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="284" cy="204" r="4" style="animation: ta13 40.00s linear infinite;"/>
+<rect class="decode" x="289" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="306" cy="204" r="4" style="animation: ta14 40.00s linear infinite;"/>
+<rect class="prefill" x="311" y="166" width="86" height="20" rx="3" stroke-width="1"/>
+<rect class="decode" x="311" y="186" width="86" height="8" rx="2" stroke-width="1"/>
+<rect class="wait" x="311" y="198" width="86" height="12" rx="2" stroke-width="1"/>
+<circle class="c-green" cx="394" cy="204" r="4" style="animation: ta15 40.00s linear infinite;"/>
+<rect class="decode" x="399" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="416" cy="204" r="4" style="animation: ta16 40.00s linear infinite;"/>
+<rect class="decode" x="421" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="438" cy="204" r="4" style="animation: ta17 40.00s linear infinite;"/>
+<rect class="decode" x="443" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="460" cy="204" r="4" style="animation: ta18 40.00s linear infinite;"/>
+<rect class="decode" x="465" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="482" cy="204" r="4" style="animation: ta19 40.00s linear infinite;"/>
+<rect class="decode" x="487" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="504" cy="204" r="4" style="animation: ta110 40.00s linear infinite;"/>
+<rect class="decode" x="509" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="526" cy="204" r="4" style="animation: ta111 40.00s linear infinite;"/>
+<rect class="prefill" x="531" y="166" width="86" height="20" rx="3" stroke-width="1"/>
+<rect class="decode" x="531" y="186" width="86" height="8" rx="2" stroke-width="1"/>
+<rect class="wait" x="531" y="198" width="86" height="12" rx="2" stroke-width="1"/>
+<circle class="c-green" cx="614" cy="204" r="4" style="animation: ta112 40.00s linear infinite;"/>
+<rect class="decode" x="619" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="636" cy="204" r="4" style="animation: ta113 40.00s linear infinite;"/>
+<rect class="decode" x="641" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="658" cy="204" r="4" style="animation: ta114 40.00s linear infinite;"/>
+<rect class="decode" x="663" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="680" cy="204" r="4" style="animation: ta115 40.00s linear infinite;"/>
+<rect class="decode" x="685" y="166" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="702" cy="204" r="4" style="animation: ta116 40.00s linear infinite;"/>
+<text class="muted t13" x="24" y="208">tokens: one dot per step</text>
+<text class="ink t16 bold" x="24" y="244">Split: GPU 0 only prefills, GPU 1 only decodes; the KV cache moves over NVLink</text>
+<text class="ink t14 bold" x="24" y="273">GPU 0 · prefill</text>
+<text class="ink t14 bold" x="24" y="329">GPU 1 · decode</text>
+<text class="muted t13" x="168" y="298" text-anchor="middle">waiting</text>
+<rect class="prefill" x="201" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="231.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv0 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<rect class="prefill" x="263" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="293.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv1 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<rect class="prefill" x="325" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="355.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv2 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<rect class="prefill" x="387" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="417.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv3 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<rect class="prefill" x="449" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="479.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv4 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<rect class="prefill" x="511" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="541.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv5 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<rect class="prefill" x="573" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="603.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv6 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<rect class="prefill" x="635" y="254" width="60" height="28" rx="3" stroke-width="1"/>
+<text class="boxink t13" x="665.0" y="273" text-anchor="middle">prompt</text>
+<rect class="c-purple motion" style="animation: kv7 40.00s linear infinite; opacity: 0;" x="-5" y="-5" width="10" height="10" rx="2"/>
+<circle class="c-blue" cx="192" cy="268" r="4.5" style="animation: q0 40.00s linear infinite;"/>
+<circle class="c-blue" cx="180" cy="268" r="4.5" style="animation: q1 40.00s linear infinite;"/>
+<circle class="c-blue" cx="168" cy="268" r="4.5" style="animation: q2 40.00s linear infinite;"/>
+<circle class="c-blue" cx="156" cy="268" r="4.5" style="animation: q3 40.00s linear infinite;"/>
+<circle class="c-blue" cx="144" cy="268" r="4.5" style="animation: q4 40.00s linear infinite;"/>
+<rect class="decode" x="201" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="218" cy="348" r="4" style="animation: tb0 40.00s linear infinite;"/>
+<rect class="decode" x="223" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="240" cy="348" r="4" style="animation: tb1 40.00s linear infinite;"/>
+<rect class="decode" x="245" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="262" cy="348" r="4" style="animation: tb2 40.00s linear infinite;"/>
+<rect class="decode" x="267" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="284" cy="348" r="4" style="animation: tb3 40.00s linear infinite;"/>
+<rect class="decode" x="289" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="306" cy="348" r="4" style="animation: tb4 40.00s linear infinite;"/>
+<rect class="decode" x="311" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="328" cy="348" r="4" style="animation: tb5 40.00s linear infinite;"/>
+<rect class="decode" x="333" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="350" cy="348" r="4" style="animation: tb6 40.00s linear infinite;"/>
+<rect class="decode" x="355" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="372" cy="348" r="4" style="animation: tb7 40.00s linear infinite;"/>
+<rect class="decode" x="377" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="394" cy="348" r="4" style="animation: tb8 40.00s linear infinite;"/>
+<rect class="decode" x="399" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="416" cy="348" r="4" style="animation: tb9 40.00s linear infinite;"/>
+<rect class="decode" x="421" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="438" cy="348" r="4" style="animation: tb10 40.00s linear infinite;"/>
+<rect class="decode" x="443" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="460" cy="348" r="4" style="animation: tb11 40.00s linear infinite;"/>
+<rect class="decode" x="465" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="482" cy="348" r="4" style="animation: tb12 40.00s linear infinite;"/>
+<rect class="decode" x="487" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="504" cy="348" r="4" style="animation: tb13 40.00s linear infinite;"/>
+<rect class="decode" x="509" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="526" cy="348" r="4" style="animation: tb14 40.00s linear infinite;"/>
+<rect class="decode" x="531" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="548" cy="348" r="4" style="animation: tb15 40.00s linear infinite;"/>
+<rect class="decode" x="553" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="570" cy="348" r="4" style="animation: tb16 40.00s linear infinite;"/>
+<rect class="decode" x="575" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="592" cy="348" r="4" style="animation: tb17 40.00s linear infinite;"/>
+<rect class="decode" x="597" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="614" cy="348" r="4" style="animation: tb18 40.00s linear infinite;"/>
+<rect class="decode" x="619" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="636" cy="348" r="4" style="animation: tb19 40.00s linear infinite;"/>
+<rect class="decode" x="641" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="658" cy="348" r="4" style="animation: tb20 40.00s linear infinite;"/>
+<rect class="decode" x="663" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="680" cy="348" r="4" style="animation: tb21 40.00s linear infinite;"/>
+<rect class="decode" x="685" y="310" width="20" height="28" rx="3" stroke-width="1"/>
+<circle class="c-green" cx="702" cy="348" r="4" style="animation: tb22 40.00s linear infinite;"/>
+<line class="s-red motion" style="animation: phA 40.00s linear infinite; opacity: 0;" x1="0" y1="112" x2="0" y2="212" stroke-width="1.5"/>
+<line class="s-red motion" style="animation: phB 40.00s linear infinite; opacity: 0;" x1="0" y1="250" x2="0" y2="352" stroke-width="1.5"/>
+<rect class="client" x="744" y="112" width="192" height="100" rx="8" stroke-width="1.2"/>
+<text class="boxink t14" x="758" y="140">TPOT</text>
+<text class="c-red t15 bold" x="922" y="140" text-anchor="end">23.8 ms</text>
+<text class="boxink t14" x="758" y="168">TTFT p50</text>
+<text class="c-green t15 bold" x="922" y="168" text-anchor="end">603 ms</text>
+<text class="boxink t14" x="758" y="196">throughput</text>
+<text class="c-green t15 bold" x="922" y="196" text-anchor="end">16.8 req/s</text>
+<rect class="client" x="744" y="250" width="192" height="100" rx="8" stroke-width="1.2"/>
+<text class="boxink t14" x="758" y="278">TPOT</text>
+<text class="c-green t15 bold" x="922" y="278" text-anchor="end">12.7 ms</text>
+<text class="boxink t14" x="758" y="306">TTFT p50</text>
+<text class="c-red t15 bold" x="922" y="306" text-anchor="end">2,878 ms</text>
+<text class="boxink t14" x="758" y="334">throughput</text>
+<text class="c-red t15 bold" x="922" y="334" text-anchor="end">12.8 req/s</text>
+<rect class="halo motion" style="animation: hlA 40.00s linear infinite; opacity: 0;" x="13" y="87" width="934" height="134" rx="10"/>
+<rect class="halo motion" style="animation: hlB 40.00s linear infinite; opacity: 0;" x="13" y="225" width="934" height="134" rx="10"/>
+<rect class="halo motion" style="animation: hlM1 40.00s linear infinite; opacity: 0;" x="741" y="109" width="198" height="106" rx="10"/>
+<rect class="halo motion" style="animation: hlM2 40.00s linear infinite; opacity: 0;" x="741" y="247" width="198" height="106" rx="10"/>
+<rect class="client" x="24" y="372" width="912" height="146" rx="10" stroke-width="1.2"/>
+<g class=" motion" style="animation: co1 40.00s linear infinite; opacity: 0;"><circle class="c-red" cx="62" cy="410" r="19"/><text class="c-white t18 bold" x="62" y="415" text-anchor="middle">1</text><text class="boxink t18 bold" x="96" y="416">Aggregated: prompt work rides inside the decode steps</text><text class="boxink t15" x="96" y="444">Each GPU runs prompt chunks in its decode steps, so every user on that GPU waits while a chunk runs.</text><text class="boxink t15" x="96" y="467">Both GPUs share the prompts: TTFT p50 603 ms and 16.8 requests/s.</text><text class="boxink t15" x="96" y="490">The cost lands on TPOT: 23.8 ms per token, against 12.7 ms with the split.</text><text class="c-red t14 bold" x="920" y="416" text-anchor="end">Parts 2 and 4</text></g>
+<g class=" motion" style="animation: co2 40.00s linear infinite; opacity: 0;"><circle class="c-red" cx="62" cy="410" r="19"/><text class="c-white t18 bold" x="62" y="415" text-anchor="middle">2</text><text class="boxink t18 bold" x="96" y="416">Split: decoding never waits for a prompt, but prompts wait for one GPU</text><text class="boxink t15" x="96" y="444">The decode GPU only decodes: TPOT 12.7 ms, about half.</text><text class="boxink t15" x="96" y="467">Every prompt queues for a single prefill GPU and its KV cache then crosses NVLink: TTFT p50 2,878 ms.</text><text class="boxink t15" x="96" y="490">The prefill GPU is now the bottleneck: 12.8 requests/s, -24% (58 of 64 requests in flight).</text><text class="c-red t14 bold" x="920" y="416" text-anchor="end">Part 4</text></g>
+<g class=" motion" style="animation: co3 40.00s linear infinite; opacity: 0;"><circle class="c-red" cx="62" cy="410" r="19"/><text class="c-white t18 bold" x="62" y="415" text-anchor="middle">3</text><text class="boxink t18 bold" x="96" y="416">When the split pays</text><text class="boxink t15" x="96" y="444">At 16 users it wins TTFT p50 (205 vs 449 ms) and TPOT (8.8 vs 9.6 ms) at equal throughput; TTFT p99 doubles.</text><text class="boxink t15" x="96" y="467">At 64 users it trades TTFT (4.8x) and throughput (-24%) for half the TPOT.</text><text class="boxink t15" x="96" y="490">Use it for long prompts with a TPOT target, KV over NVLink or RDMA, and pools sized to the traffic.</text><text class="c-red t14 bold" x="920" y="416" text-anchor="end">Part 4</text></g>
+<g class="still"><text class="boxink t15" x="44" y="404">Aggregated: prompt chunks stall decoding. TPOT 23.8 ms, TTFT p50 603 ms, 16.8 requests/s.</text><text class="boxink t15" x="44" y="432">Split: decoding never stalls, TPOT 12.7 ms; one prefill GPU queues prompts, TTFT p50 2,878 ms, 12.8 requests/s (58 in flight).</text><text class="boxink t15" x="44" y="460">At 16 users the split wins TTFT p50 (205 vs 449 ms) and TPOT (8.8 vs 9.6 ms) at equal throughput.</text><text class="boxink t15" x="44" y="488">Use it for long prompts with a TPOT target, KV over NVLink or RDMA, and pools sized to the traffic.</text></g>
+<text class="muted t13" x="24" y="546">Steps drawn schematically, not to scale. Qwen3-8B BF16, 2x H100 SXM, KV block 16; results from Part 4.</text>
+</svg>

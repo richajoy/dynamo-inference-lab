@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate the animated explanatory diagrams in figures/ (self-contained SVG, no dependencies).
 
-  figures/anim-request-path.svg   aggregated vs disaggregated request path
+  figures/anim-agg-vs-disagg.svg  same traffic on two H100s: aggregated workers vs a prefill/decode split
   figures/anim-interference.svg   why a prompt chunk stalls every decoding user, and what disaggregation changes
-  figures/anim-kv-transfer.svg    one KV cache over NVLink vs TCP, and contiguous vs fragmented KV blocks
+  figures/anim-kv-transfer.svg    why a KV transfer over NVLink slows under load: contiguous vs fragmented KV blocks
   figures/anim-request-journey.svg  one request: where TTFT and TPOT are spent, and the knob that moves each (README hero)
   figures/anim-stack-overview.svg   the stack and who manages it (README): stack-overview.mmd plus the response path
 
@@ -104,60 +104,7 @@ def pulse(name, t0, t1):
                             (t1, "opacity: 0.85;"), (min(t1 + 0.01, 100), "opacity: 0;"), (100, "opacity: 0;")])
 
 
-# ---------------------------------------------------------------- 1. request path
-def request_path():
-    W, H, CYC = 960, 520, 7
-    css, body = "", [MARKER,
-                     '<text class="ink title" x="24" y="34">One request, two ways to serve it</text>',
-                     '<text class="muted small" x="24" y="54">Blue: the prompt. Orange: prefill. Purple: the KV '
-                     'cache moving between GPUs. Green: output tokens.</text>']
-    # lane 1: aggregated
-    y1 = 110
-    body += ['<text class="ink label bold" x="24" y="96">Aggregated: one GPU does prefill and decode</text>',
-             box(40, y1, 150, 64, "client", ["Client", "(or AIPerf)"]),
-             box(300, y1, 190, 64, "dynamo", ["Dynamo frontend", "tokenize + route"]),
-             box(600, y1, 300, 64, "gpu", ["vLLM worker (one GPU)", "prefill, then one decode step per token"]),
-             arrow(190, y1 + 24, 298, y1 + 24), arrow(490, y1 + 24, 598, y1 + 24),
-             arrow(598, y1 + 44, 492, y1 + 44), arrow(298, y1 + 44, 192, y1 + 44)]
-    # lane 2: disaggregated
-    y2 = 290
-    body += ['<text class="ink label bold" x="24" y="268">Disaggregated: prefill and decode on separate GPUs</text>',
-             box(40, y2 + 40, 150, 64, "client", ["Client", "(or AIPerf)"]),
-             box(300, y2 + 40, 190, 64, "dynamo", ["Dynamo frontend", "prefill leg, then decode leg"]),
-             box(600, y2, 300, 56, "gpu", ["Prefill worker (GPU 0)", "computes and stages the KV cache"]),
-             box(600, y2 + 112, 300, 56, "gpu", ["Decode worker (GPU 1)", "pulls the KV, generates tokens"]),
-             arrow(190, y2 + 62, 298, y2 + 62), arrow(490, y2 + 56, 598, y2 + 30),
-             arrow(750, y2 + 58, 750, y2 + 110, cls="s-purple", width=2.4, dash="6 4"),
-             f'<text class="c-purple small bold" x="738" y="{y2 + 74}" text-anchor="end">KV cache via NIXL / UCX</text>',
-             f'<text class="muted small" x="738" y="{y2 + 88}" text-anchor="end">NVLink within a node (measured),</text>',
-             f'<text class="muted small" x="738" y="{y2 + 102}" text-anchor="end">RoCE or InfiniBand across nodes</text>',
-             arrow(598, y2 + 140, 492, y2 + 86), arrow(298, y2 + 84, 192, y2 + 84)]
-    # highlights (pulses on worker boxes)
-    hl = [("hl-agg-pre", 600, y1, 300, 64, "prefill", 22, 38), ("hl-agg-dec", 600, y1, 300, 64, "decode", 40, 92),
-          ("hl-dis-pre", 600, y2, 300, 56, "prefill", 22, 38), ("hl-dis-dec", 600, y2 + 112, 300, 56, "decode", 56, 92)]
-    for name, x, y, w, h, cls, a, b in hl:
-        body.append(f'<rect class="{cls} motion" x="{x}" y="{y}" width="{w}" height="{h}" rx="8" stroke-width="2.4" '
-                    f'style="animation: {name} {CYC}s linear infinite; opacity: 0; fill: none; stroke-width: 5px;"/>')
-        css += pulse(name, a, b)
-    # moving dots
-    dots = [("p-agg", [(190, y1 + 24), (300, y1 + 24), (490, y1 + 24), (600, y1 + 24)], 2, 20, "c-blue", 7),
-            ("p-dis", [(190, y2 + 62), (300, y2 + 62), (490, y2 + 56), (600, y2 + 30)], 2, 20, "c-blue", 7),
-            ("kv-dis", [(750, y2 + 60), (750, y2 + 110)], 40, 54, "c-purple", 8)]
-    for i in range(5):  # token stream
-        s = 42 + i * 10
-        dots.append((f"t-agg{i}", [(600, y1 + 44), (490, y1 + 44), (300, y1 + 44), (190, y1 + 44)], s, s + 9, "c-green", 6))
-        s2 = 57 + i * 7
-        dots.append((f"t-dis{i}", [(600, y2 + 140), (490, y2 + 86), (300, y2 + 84), (190, y2 + 84)], s2, s2 + 8, "c-green", 6))
-    for name, pts, a, b, cls, r in dots:
-        body.append(f'<circle class="{cls} motion" r="{r}" cx="0" cy="0" '
-                    f'style="animation: {name} {CYC}s linear infinite; opacity: 0;"/>')
-        css += path_anim(name, pts, a, b)
-    body.append('<text class="muted small" x="24" y="500">Dynamo decides the order of the two legs and the workers; '
-                'vLLM stages and pulls the KV blocks; UCX chooses the wire.</text>')
-    return svg(W, H, "\n".join(body), css)
-
-
-# ---------------------------------------------------------------- 2. interference timeline
+# ---------------------------------------------------------------- 1. interference timeline
 def interference():
     W, H, CYC = 960, 450, 8
     X0, PX = 170, 1.7          # timeline origin and pixels per ms
@@ -230,33 +177,16 @@ def interference():
     return svg(W, H, "\n".join(body), css)
 
 
-# ---------------------------------------------------------------- 3. KV transfer
+# ---------------------------------------------------------------- 2. KV transfer
 def kv_transfer():
-    W, H, CYC = 960, 500, 6
+    W, H, CYC = 960, 300, 6
     css = ""
-    body = [MARKER, '<text class="ink title" x="24" y="34">Moving one KV cache (846 MiB) from the prefill GPU to the decode GPU</text>',
-            '<text class="muted small" x="24" y="54">Both bars run on the same clock. Measured on 2x H100: the link '
-            'UCX chooses decides everything.</text>']
-    X0, WBAR = 260, 600
-    tcp_ms, nv_ms = 2000, 5.4
-    fill_end = 100 / 1.25
-    for i, (lab, sub, ms, cls) in enumerate((("CUDA IPC over NVLink", "both GPUs visible to the pods", nv_ms, "c-green"),
-                                             ("TCP over the pod network", "one GPU per pod (the default)", tcp_ms, "c-red"))):
-        y = 96 + i * 70
-        body += [f'<text class="ink label bold" x="24" y="{y + 18}">{lab}</text>',
-                 f'<text class="muted small" x="24" y="{y + 34}">{sub}</text>',
-                 f'<rect class="client" x="{X0}" y="{y}" width="{WBAR}" height="30" rx="5" stroke-width="1"/>',
-                 f'<rect class="{cls}" x="{X0}" y="{y}" width="{WBAR}" height="30" rx="5" '
-                 f'style="transform-origin: {X0}px {y}px; animation: bar{i} {CYC}s linear infinite;"/>',
-                 f'<text class="ink label bold" x="{X0 + WBAR + 14}" y="{y + 20}">{"5.4 ms" if i == 0 else "~2,000 ms"}</text>']
-        end = fill_end * ms / tcp_ms
-        css += keyframes(f"bar{i}", [(0, "transform: scaleX(0);"), (max(end, 0.4), "transform: scaleX(1);"),
-                                     (96, "transform: scaleX(1);"), (100, "transform: scaleX(0);")])
-    body.append(f'<text class="c-purple label bold" x="{X0}" y="246">About 370x apart. Over TCP a prompt-heavy service '
-                f'topped out near 1 request/s.</text>')
+    body = [MARKER, '<text class="ink title" x="24" y="34">Why a KV transfer over NVLink slows down under load</text>',
+            '<text class="muted small" x="24" y="54">Measured on 2x H100: an idle 846 MiB transfer took 5.4 ms; under load a '
+            '6,000-token (843.75 MiB) transfer took ~93 ms.</text>']
     # descriptor panel
-    yb = 300
-    body.append(f'<text class="ink label bold" x="24" y="{yb - 8}">Once the link is fast: how the KV blocks are laid out decides the copy list</text>')
+    yb = 100
+    body.append(f'<text class="ink label bold" x="24" y="{yb - 8}">How the KV blocks are laid out decides the copy list</text>')
     cols, cell, gap = 24, 16, 3
     rnd = random.Random(7)
     picked = sorted(rnd.sample(range(cols * 3), 12))
@@ -276,8 +206,8 @@ def kv_transfer():
         body.append(f'<text class="c-purple small bold" x="{x0}" y="{yb + 124}">{ndesc}</text>')
         css += keyframes(f"blk{p}", [(0, "opacity: 0.35;"), (15 + p * 35, "opacity: 0.35;"), (20 + p * 35, "opacity: 1;"),
                                      (92, "opacity: 1;"), (100, "opacity: 0.35;")])
-    body.append('<text class="muted small" x="24" y="470">Each descriptor costs ~3.8 μs of CPU work to post. 13,500 of them '
-                'took more than half of a ~93 ms transfer on the fast link.</text>')
+    body.append('<text class="muted small" x="24" y="270">Each descriptor costs ~3.8 μs of CPU work to post. 13,500 of them '
+                'took more than half of the ~93 ms.</text>')
     return svg(W, H, "\n".join(body), css)
 
 
@@ -366,7 +296,7 @@ def callout_panel(tl, py, items, spans, x0=24, w=912, h=146):
     return out
 
 
-# ---------------------------------------------------------------- 4. request journey (README hero)
+# ---------------------------------------------------------------- 3. request journey (README hero)
 def request_journey():
     W, H = 960, 548
     # Motion runs at 1.2x script time; the quiet end of each stop stretches so its callout holds ~11 s to be read,
@@ -420,7 +350,7 @@ def request_journey():
     body += [f'<rect class="dynamo" x="470" y="{YP}" width="466" height="58" rx="8" stroke-width="1.6"/>',
              badge(5, 494, YP + 29),
              f'<text class="boxink t16 bold" x="518" y="{YP + 24}">Dynamo planner</text>',
-             f'<text class="boxink t13" x="518" y="{YP + 44}">resizes the pools · 2 to 3 min per move</text>',
+             f'<text class="boxink t13" x="518" y="{YP + 44}">resizes the pools · about 2 to 3 min per move</text>',
              f'<text class="boxink t13" x="770" y="{YP + 24}">new pod: cold start</text>',
              f'<rect class="client" x="770" y="{YP + 33}" width="150" height="10" rx="3" stroke-width="1"/>',
              arrow(560, YP, 560, YB + 2, dash="4 3", width=1.3), arrow(900, YP, 900, YB + 2, dash="4 3", width=1.3)]
@@ -482,16 +412,16 @@ def request_journey():
          "Part 3"),
         (2, "Prefill: sets TTFT; on a shared GPU it also sets TPOT",
          ["Time: a 3,000-token prompt keeps an H100 busy ~70 ms (Nsight, upper bound); one user's TTFT is 79 ms.",
-          "On one shared GPU at 64 users: one token gap in ten is ~200 ms, the median ~17 ms.",
-          "Knob (shared GPU): --max-num-batched-tokens 512 at 64 users: TPOT 43.7 → 17.6 ms, TTFT p50 0.6 → 4.8 s."],
+          "On one shared GPU at 64 prompt-heavy users: one token gap in ten is ~200 ms, the median ~17 ms.",
+          "Knob: --max-num-batched-tokens 512, same GPU and users: TPOT 43.7 → 17.6 ms, TTFT p50 0.6 → 4.8 s."],
          "Parts 2 and 6"),
         (3, "KV transfer: adds to TTFT, and posting it stalls running decodes",
-         ["Time, 6,000-token KV cache (~845 MiB) over NVLink: 5.4 ms idle, ~93 ms under load.",
-          "Why: under load it is ~13,400 scattered spans, each posted by the CPU in ~3.8 μs: ~51 ms of the ~93.",
-          "Knob: --block-size 64: transfer ~93 → ~26 ms; 64 prompt-heavy users: TPOT 12.7 → 10.2 ms, TTFT p50 2.9 → 3.3 s."],
+         ["Time, one ~6,000-token KV cache over NVLink: 5.4 ms idle, ~93 ms under load.",
+          "Why: under load it is ~13,500 scattered spans, each posted by the CPU in ~3.8 μs: ~51 ms of the ~93.",
+          "Knob: --block-size 64: transfer ~93 → ~26 ms; 64 prompt-heavy users (57 in flight): TPOT -20%, TTFT p50 +15%."],
          "Part 4"),
         (4, "Decode: sets TPOT, one engine step per token",
-         ["Time: a step reads the weights and KV cache: 6.85 ms at 1 user, 9.94 ms at 64 (short prompts).",
+         ["Time: a step reads the weights and KV cache: 6.85 ms at 1 user, 9.94 ms at 64 (short prompts, one GPU).",
           "Knob: FP8 weights: TPOT 7.59 → 5.41 ms (-29%) at 16 short-prompt users; accuracy not evaluated.",
           "Knob: prefill/decode split: TPOT 23.8 → 12.7 ms at 64 prompt-heavy users (2 GPUs)."],
          "Parts 2, 4 and 6"),
@@ -525,9 +455,9 @@ def request_journey():
 
     # still image (reduced motion): the knob at each stop
     still = [(1, "Router: --router-prefill-load-scale 10, hit rate 0.64 → 0.89 (Part 3)"),
-             (2, "Prefill: chunk budget 512, one GPU, 64 users: TPOT 43.7 → 17.6 ms, TTFT p50 0.6 → 4.8 s (Part 6)"),
+             (2, "Prefill: chunk budget 512, one GPU, 64 prompt-heavy users: TPOT 43.7 → 17.6 ms, TTFT p50 0.6 → 4.8 s (Part 6)"),
              (3, "KV transfer: --block-size 64, ~93 → ~26 ms per loaded transfer, a partial fix (Part 4)"),
-             (4, "Decode: FP8 weights, TPOT -29% at 16 users; prefill/decode split, TPOT 23.8 → 12.7 ms (Parts 4, 6)"),
+             (4, "Decode: FP8 weights, TPOT -29% at 16 short-prompt users; prefill/decode split, TPOT 23.8 → 12.7 ms (Parts 4, 6)"),
              (5, "Planner: 1 min 51 s to 2 min 49 s per move (Part 5)")]
     g = ['<g class="still">']
     for i, (n, text) in enumerate(still):
@@ -537,6 +467,134 @@ def request_journey():
 
     body.append(f'<text class="muted t13" x="24" y="{H - 14}">Qwen3-8B on H100 SXM (routing: Qwen3-4B, same KV size per '
                 'token). Dots show order, not duration.</text>')
+    return svg(W, H, "\n".join(body), tl.css)
+
+
+# ---------------------------------------------------------------- 4. aggregated vs disaggregated (README, Part 4)
+def agg_vs_disagg():
+    """Same traffic on the same two H100s: two aggregated workers against 1 prefill + 1 decode. Steps are schematic;
+    every number is a measured result from docs/04 (prompt-heavy, 64 concurrent unless it says 16 users)."""
+    W, H = 960, 560
+    tl = Timeline(40.0)
+    X0, XE = 200, 724                       # step tracks
+    DW, MW, PW = 22, 88, 62                 # decode step, step with a prompt chunk, one prompt's prefill (schematic)
+    A = (0.5, 9.5)                          # playhead sweep, aggregated lane
+    B = (13.5, 22.5)                        # playhead sweep, split lane
+    END = tl.cyc - 0.05
+
+    def at(x, sweep):
+        return sweep[0] + (sweep[1] - sweep[0]) * (x - X0) / (XE - X0)
+
+    def lights(name, t):                    # dim until the playhead reaches it, then lit for the rest of the loop
+        p = tl.pct(t)
+        tl.css += keyframes(name, [(0, "opacity: 0.18;"), (max(p - 0.01, 0), "opacity: 0.18;"), (p, "opacity: 1;"),
+                                   (99, "opacity: 1;"), (100, "opacity: 0.18;")])
+
+    def appears(name, t):                   # hidden until t, then shown; fully visible in the reduced-motion still
+        p = tl.pct(t)
+        tl.css += keyframes(name, [(0, "opacity: 0;"), (max(p - 0.01, 0), "opacity: 0;"), (p, "opacity: 1;"),
+                                   (99, "opacity: 1;"), (100, "opacity: 0;")])
+
+    body = [MARKER,
+            '<text class="ink t20 bold" x="24" y="34">Same traffic, same two H100s: aggregated or split?</text>',
+            '<text class="muted t15" x="24" y="56">Prompt-heavy traffic (3,000-token prompts, 128 output tokens), 64 '
+            'concurrent users, Qwen3-8B. Measured results on the right.</text>']
+    legend = [("decode", "decode step"), ("prefill", "prompt work"), ("kvbox", "KV cache"),
+              ("wait", "every decoding user on that GPU waits")]
+    x = 24
+    for cls, text in legend:
+        body += [f'<rect class="{cls}" x="{x}" y="68" width="14" height="12" rx="2" stroke-width="1"/>',
+                 f'<text class="muted t13" x="{x + 20}" y="79">{text}</text>']
+        x += 34 + 7.2 * len(text)
+
+    def steps(y, pattern, name, sweep):
+        out, x, k = [], X0, 0
+        for kind in pattern:
+            w = MW if kind == "M" else DW
+            if x + w > XE:
+                break
+            if kind == "M":
+                out += [f'<rect class="prefill" x="{x + 1}" y="{y}" width="{w - 2}" height="20" rx="3" stroke-width="1"/>',
+                        f'<rect class="decode" x="{x + 1}" y="{y + 20}" width="{w - 2}" height="8" rx="2" stroke-width="1"/>',
+                        f'<rect class="wait" x="{x + 1}" y="{y + 32}" width="{w - 2}" height="12" rx="2" stroke-width="1"/>']
+            else:
+                out.append(f'<rect class="decode" x="{x + 1}" y="{y}" width="{w - 2}" height="28" rx="3" stroke-width="1"/>')
+            x += w
+            out.append(f'<circle class="c-green" cx="{x - 4}" cy="{y + 38}" r="4" style="animation: {name}{k} {tl.dur:.2f}s linear infinite;"/>')
+            lights(f"{name}{k}", at(x, sweep))
+            k += 1
+        return out
+
+    # lane A: two aggregated workers
+    body.append('<text class="ink t16 bold" x="24" y="106">Aggregated: each GPU prefills and decodes; the KV router spreads '
+                'requests</text>')
+    for i, (y, pattern) in enumerate(((116, "dddMdddddMdddddddd"), (166, "dddddMddddddMddddd"))):
+        body.append(f'<text class="ink t14 bold" x="24" y="{y + 19}">GPU {i}</text>')
+        body += steps(y, pattern, f"ta{i}", A)
+    body.append('<text class="muted t13" x="24" y="208">tokens: one dot per step</text>')
+    # lane B: one prefill GPU, one decode GPU
+    body.append('<text class="ink t16 bold" x="24" y="244">Split: GPU 0 only prefills, GPU 1 only decodes; the KV cache '
+                'moves over NVLink</text>')
+    yp, yd = 254, 310
+    body += [f'<text class="ink t14 bold" x="24" y="{yp + 19}">GPU 0 · prefill</text>',
+             f'<text class="ink t14 bold" x="24" y="{yd + 19}">GPU 1 · decode</text>',
+             f'<text class="muted t13" x="168" y="{yp + 44}" text-anchor="middle">waiting</text>']
+    for k in range(int((XE - X0) // PW)):
+        x = X0 + k * PW
+        body += [f'<rect class="prefill" x="{x + 1}" y="{yp}" width="{PW - 2}" height="28" rx="3" stroke-width="1"/>',
+                 f'<text class="boxink t13" x="{x + PW / 2}" y="{yp + 19}" text-anchor="middle">prompt</text>']
+        t = at(x + PW, B)
+        body.append(f'<rect {tl.attr("c-purple", f"kv{k}")} x="-5" y="-5" width="10" height="10" rx="2"/>')
+        tl.track(f"kv{k}", [(t, x + PW - 6, yp + 32, 1), (t + 0.6, x + PW - 6, yd - 6, 1), (t + 0.61, x + PW - 6, yd - 6, 0)])
+    for k in range(5):                      # the prefill queue grows: one GPU cannot keep up with 64 users
+        body.append(f'<circle class="c-blue" cx="{192 - k * 12}" cy="{yp + 14}" r="4.5" '
+                    f'style="animation: q{k} {tl.dur:.2f}s linear infinite;"/>')
+        appears(f"q{k}", B[0] + 1.2 + k * 1.6)
+    body += steps(yd, "d" * 40, "tb", B)
+    # playheads
+    for name, (y0, y1), sweep in (("phA", (112, 212), A), ("phB", (250, 352), B)):
+        body.append(f'<line {tl.attr("s-red", name)} x1="0" y1="{y0}" x2="0" y2="{y1}" stroke-width="1.5"/>')
+        tl.track(name, [(sweep[0], X0, 0, 1), (sweep[1], XE, 0, 1), (sweep[1] + 0.01, XE, 0, 0)])
+    # measured results, winner of each metric in green
+    for y, rows in ((112, (("TPOT", "23.8 ms", "c-red"), ("TTFT p50", "603 ms", "c-green"), ("throughput", "16.8 req/s", "c-green"))),
+                    (250, (("TPOT", "12.7 ms", "c-green"), ("TTFT p50", "2,878 ms", "c-red"), ("throughput", "12.8 req/s", "c-red")))):
+        body.append(f'<rect class="client" x="744" y="{y}" width="192" height="100" rx="8" stroke-width="1.2"/>')
+        for k, (label, value, cls) in enumerate(rows):
+            body += [f'<text class="boxink t14" x="758" y="{y + 28 + k * 28}">{label}</text>',
+                     f'<text class="{cls} t15 bold" x="922" y="{y + 28 + k * 28}" text-anchor="end">{value}</text>']
+    # stage highlights
+    for name, (x, y, w, h), t0, t1 in (("hlA", (16, 90, 928, 128), 0.3, 13.4), ("hlB", (16, 228, 928, 128), 13.5, 27.4),
+                                       ("hlM1", (744, 112, 192, 100), 27.5, END), ("hlM2", (744, 250, 192, 100), 27.5, END)):
+        body.append(f'<rect {tl.attr("halo", name)} x="{x - 3}" y="{y - 3}" width="{w + 6}" height="{h + 6}" rx="10"/>')
+        tl.shown(name, t0, t1, peak=0.9)
+
+    PY = 372
+    items = [
+        (1, "Aggregated: prompt work rides inside the decode steps",
+         ["Each GPU runs prompt chunks in its decode steps, so every user on that GPU waits while a chunk runs.",
+          "Both GPUs share the prompts: TTFT p50 603 ms and 16.8 requests/s.",
+          "The cost lands on TPOT: 23.8 ms per token, against 12.7 ms with the split."],
+         "Parts 2 and 4"),
+        (2, "Split: decoding never waits for a prompt, but prompts wait for one GPU",
+         ["The decode GPU only decodes: TPOT 12.7 ms, about half.",
+          "Every prompt queues for a single prefill GPU and its KV cache then crosses NVLink: TTFT p50 2,878 ms.",
+          "The prefill GPU is now the bottleneck: 12.8 requests/s, -24% (58 of 64 requests in flight)."],
+         "Part 4"),
+        (3, "When the split pays",
+         ["At 16 users it wins TTFT p50 (205 vs 449 ms) and TPOT (8.8 vs 9.6 ms) at equal throughput; TTFT p99 doubles.",
+          "At 64 users it trades TTFT (4.8x) and throughput (-24%) for half the TPOT.",
+          "Use it for long prompts with a TPOT target, KV over NVLink or RDMA, and pools sized to the traffic."],
+         "Part 4"),
+    ]
+    body += callout_panel(tl, PY, items, [(0.3, 13.4), (13.5, 27.4), (27.5, END)])
+    still = ["Aggregated: prompt chunks stall decoding. TPOT 23.8 ms, TTFT p50 603 ms, 16.8 requests/s.",
+             "Split: decoding never stalls, TPOT 12.7 ms; one prefill GPU queues prompts, TTFT p50 2,878 ms, 12.8 requests/s (58 in flight).",
+             "At 16 users the split wins TTFT p50 (205 vs 449 ms) and TPOT (8.8 vs 9.6 ms) at equal throughput.",
+             "Use it for long prompts with a TPOT target, KV over NVLink or RDMA, and pools sized to the traffic."]
+    body.append('<g class="still">' + "".join(f'<text class="boxink t15" x="44" y="{PY + 32 + i * 28}">{t}</text>'
+                                              for i, t in enumerate(still)) + "</g>")
+    body.append(f'<text class="muted t13" x="24" y="{H - 14}">Steps drawn schematically, not to scale. Qwen3-8B BF16, '
+                '2x H100 SXM, KV block 16; results from Part 4.</text>')
     return svg(W, H, "\n".join(body), tl.css)
 
 
@@ -644,7 +702,7 @@ def stack_overview():
 
 
 if __name__ == "__main__":
-    for name, fn in (("anim-request-path", request_path), ("anim-interference", interference),
+    for name, fn in (("anim-agg-vs-disagg", agg_vs_disagg), ("anim-interference", interference),
                      ("anim-kv-transfer", kv_transfer), ("anim-request-journey", request_journey),
                      ("anim-stack-overview", stack_overview)):
         p = OUT / f"{name}.svg"
