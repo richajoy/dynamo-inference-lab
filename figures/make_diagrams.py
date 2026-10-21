@@ -5,7 +5,7 @@
   figures/anim-interference.svg   why a prompt chunk stalls every decoding user, and what disaggregation changes
   figures/anim-kv-transfer.svg    one KV cache over NVLink vs TCP, and contiguous vs fragmented KV blocks
   figures/anim-request-journey.svg  one request: where TTFT and TPOT are spent, and the knob that moves each (README hero)
-  figures/anim-stack-ownership.svg  who manages what: each setting and the one process that reads it (README stack)
+  figures/anim-stack-overview.svg   the stack and who manages it (README), figures/diagrams/stack-overview.mmd animated
 
 Each SVG animates with CSS keyframes, loops, respects prefers-reduced-motion (motion stops and a complete static
 diagram remains) and prefers-color-scheme (dark palette). Numbers shown are the measured values used in the docs.
@@ -524,120 +524,103 @@ def request_journey():
 
 
 # ---------------------------------------------------------------- 5. who manages what (README stack)
-def stack_ownership():
-    W, H = 960, 700
-    tl = Timeline(36.0)
-    tl.css += "\n  .card { fill: #ffffff; stroke: #d0d7de; } .platform { fill: #e6edf3; stroke: #6e7781; }"
-    tl.css += "\n  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }"
-    Y0, RH, GAP = 88, 44, 6
-    CX, CW, LX, LW = 24, 368, 428, 344        # config card column, process column
-    PY = 552                                  # callout panel top
-    # (setting you write, where you write it, process that reads it, what it decides, box class)
-    rows = [
-        ("optimization_target: load", "DGD, planner component", "Dynamo planner", "how pool sizes change over time", "dynamo"),
-        ("replicas: 2", "DGD, worker component", "Dynamo operator", "which pods exist, and how many", "dynamo"),
-        ("--router-prefill-load-scale 10", "DGD, frontend args", "Dynamo frontend (router)", "which worker gets each request", "dynamo"),
-        ("--disaggregation-mode prefill", "DGD, worker args", "dynamo.vllm wrapper", "prefill, decode, or both", "gpu"),
-        ("--max-num-batched-tokens 512", "DGD, worker args (passed to vLLM)", "vLLM scheduler", "how each engine step is formed", "gpu"),
-        ("(not set)", "nowhere: picked per GPU", "vLLM source code", "every default you did not set", "gpu"),
-        ("--kv-transfer-config, UCX_* env", "DGD, worker args and env", "NIXL connector, NIXL, UCX", "how KV moves, and over which wire", "kvbox"),
-        ("nvidia.com/gpu: 1", "pod spec, resources.limits", "KAI scheduler, kubelet, device plugin", "which node and GPU a pod lands on", "platform"),
-        ("nvidia.com/mig.config=all-3g.40gb", "node label, Helm values", "GPU Operator", "which GPUs exist, and how they are split", "platform"),
-    ]
-    top = lambda i: Y0 + i * (RH + GAP)
-    mid = lambda i: top(i) + RH / 2
-    body = [MARKER,
-            '<text class="ink t20 bold" x="24" y="34">Who manages what: every setting is read by exactly one process</text>',
-            '<text class="muted t15" x="24" y="56">That process decides what the setting means; the YAML file you wrote it '
-            'in does not.</text>',
-            f'<text class="muted t13 bold" x="{CX}" y="{Y0 - 10}">WHAT YOU WRITE, AND WHERE</text>',
-            f'<text class="muted t13 bold" x="{LX}" y="{Y0 - 10}">THE PROCESS THAT READS IT</text>',
-            f'<text class="muted t13 bold" x="786" y="{Y0 - 10}">WHERE IT RUNS</text>']
-    for i, (cfg, where, who, decides, cls) in enumerate(rows):
-        y = top(i)
-        body += [f'<rect class="card" x="{CX}" y="{y}" width="{CW}" height="{RH}" rx="6" stroke-width="1"/>',
-                 badge(i + 1, CX + 20, y + RH / 2, r=11, size="t13"),
-                 f'<text class="boxink t13 mono bold" x="{CX + 40}" y="{y + 19}">{cfg}</text>',
-                 f'<text class="muted small" x="{CX + 40}" y="{y + 36}">{where}</text>',
-                 arrow(CX + CW + 2, mid(i), LX - 2, mid(i)),
-                 f'<rect class="{cls}" x="{LX}" y="{y}" width="{LW}" height="{RH}" rx="6" stroke-width="1.4"/>',
-                 f'<text class="boxink t14 bold" x="{LX + 14}" y="{y + 19}">{who}</text>',
-                 f'<text class="boxink t13" x="{LX + 14}" y="{y + 36}">decides {decides}</text>']
-    # where each process runs
-    groups = [(0, 1, "Dynamo control pods", "operator; planner per graph"), (2, 2, "Frontend pod", "one per graph"),
-              (3, 6, "vLLM worker pod", "one per GPU or MIG slice"), (7, 8, "Kubernetes cluster", "KAI, kubelet, GPU Operator")]
-    for a, b, name, sub in groups:
-        y1, y2 = top(a) + 4, top(b) + RH - 4
-        ym = (y1 + y2) / 2
-        body += [f'<path class="line" d="M780,{y1} H786 V{y2} H780" fill="none" stroke-width="1.6"/>',
-                 f'<text class="ink t14 bold" x="798" y="{ym - 2}">{name}</text>',
-                 f'<text class="muted small" x="798" y="{ym + 15}">{sub}</text>']
+def rounded(points, r=8):
+    """SVG path through `points` with rounded corners, like Mermaid's flowchart edges."""
+    d = [f"M{points[0][0]},{points[0][1]}"]
+    for (x0, y0), (x1, y1), (x2, y2) in zip(points, points[1:], points[2:]):
+        a = max(abs(x1 - x0), abs(y1 - y0)) or 1
+        b = max(abs(x2 - x1), abs(y2 - y1)) or 1
+        k1, k2 = min(r, a / 2) / a, min(r, b / 2) / b
+        d.append(f"L{x1 - (x1 - x0) * k1:g},{y1 - (y1 - y0) * k1:g} Q{x1},{y1} {x1 + (x2 - x1) * k2:g},{y1 + (y2 - y1) * k2:g}")
+    d.append(f"L{points[-1][0]},{points[-1][1]}")
+    return " ".join(d)
 
-    # one step per row: the setting and its reader light up, a dot runs the arrow, the callout explains
-    T0, STEP = 0.6, 3.4
-    items = [
-        (1, "Dynamo planner: how pool sizes change over time",
-         ["Set in the DGD's planner component. Each decision becomes a pod deleted and another cold-started:",
-          "1 min 51 s to 2 min 49 s per move."], "Part 5"),
-        (2, "Dynamo operator: which pods exist, and how many",
-         ["Set in the DGD's components, replicas and podTemplate.",
-          "It watches the DynamoGraphDeployment and creates or deletes pods to match it."], "Part 1"),
-        (3, "Dynamo frontend: which worker gets each request",
-         ["Set in the frontend container's args, alongside --router-mode kv.",
-          "--router-prefill-load-scale 10 raised the H100 prefix hit rate 0.64 → 0.89 (Qwen3-4B)."], "Part 3"),
-        (4, "dynamo.vllm wrapper: prefill, decode, or both",
-         ["Set in the worker's args. Dynamo and vLLM exchange one small dictionary, kv_transfer_params;",
-          "Dynamo never touches the KV bytes."], "Part 4"),
-        (5, "vLLM scheduler: how each engine step is formed",
-         ["Set in the worker's args, passed through to vLLM. At 64 users, --max-num-batched-tokens 512 took",
-          "TPOT 43.7 → 17.6 ms and TTFT p50 0.6 → 4.8 s."], "Part 6"),
-        (6, "vLLM source code: every default you did not set",
-         ["Nothing in any YAML. The default depends on the GPU: the chunk budget is 8,192 tokens",
-          "on an H100 80GB and 2,048 on an A100 40GB."], "Parts 1 and 2"),
-        (7, "NIXL connector, NIXL, UCX: how the KV cache moves",
-         ["Set in the worker's args and env; UCX reads UCX_* variables and picks the wire itself, silently.",
-          "NVLink moved 846 MiB in 5.4 ms; TCP took ~2 s."], "Part 4"),
-        (8, "Scheduler, kubelet, device plugin: which node and GPU a pod lands on",
-         ["Set in the pod's resources.limits. With nvidia.com/gpu: 1 the device plugin gives each pod exactly one GPU,",
-          "so the decode pod cannot open the prefill GPU's memory and UCX falls back to TCP."], "Part 4"),
-        (9, "GPU Operator: which GPUs exist, and how they are split",
-         ["Set in Helm values and node labels. nvidia.com/mig.config=all-3g.40gb turns",
-          "2 H100s into 4 schedulable slices."], "Part 5"),
-    ]
-    spans = []
-    for i in range(len(rows)):
-        t0, t1 = T0 + i * STEP, T0 + (i + 1) * STEP
-        spans.append((t0, t1))
-        y = top(i)
-        for name, x, w in ((f"hc{i}", CX, CW), (f"hp{i}", LX, LW)):
-            body.append(f'<rect {tl.attr("halo", name)} x="{x - 3}" y="{y - 3}" width="{w + 6}" height="{RH + 6}" rx="8"/>')
-            tl.shown(name, t0, t1, peak=0.9)
-        body.append(f'<circle {tl.attr("c-red", f"dot{i}")} r="5" cx="0" cy="0"/>')
-        tl.track(f"dot{i}", [(t0 + 0.1, CX + CW, mid(i), 1), (t0 + 0.6, LX, mid(i), 1), (t0 + 0.61, LX, mid(i), 0)])
-        body.append(f'<circle {tl.attr("ring", f"rg{i}")} cx="{CX + 20}" cy="{mid(i)}" r="11"/>')
-        tl.ring(f"rg{i}", t0)
-    body += callout_panel(tl, PY, items, spans, h=118)
-    end_text = [f'<text class="boxink t18 bold" x="44" y="{PY + 40}">When a number moves unexpectedly, walk this list</text>',
-                f'<text class="boxink t15" x="44" y="{PY + 68}">Which process read the setting, and what did it log at '
-                'startup?',
-                f'<text class="boxink t15" x="44" y="{PY + 91}">Part 1 has the full table, with the reasoning behind '
-                'each row.</text>',
-                f'<text class="c-red t14 bold" x="920" y="{PY + 40}" text-anchor="end">Part 1</text>']
-    end_text[1] += "</text>"
-    t_end = T0 + len(rows) * STEP
-    body.append(f'<g {tl.attr("", "end")}>' + "".join(end_text) + "</g>")
-    tl.shown("end", t_end, tl.cyc - 0.05)
-    body.append('<g class="still"><rect class="client" x="24" y="%d" width="912" height="118" rx="10" '
-                'stroke-width="1.2"/>%s</g>' % (PY, "".join(end_text)))
-    body.append(f'<text class="muted t13" x="24" y="{H - 14}">DGD: DynamoGraphDeployment, the one Kubernetes resource '
-                'that describes a Dynamo serving graph.</text>')
-    return svg(W, H, "\n".join(body), tl.css)
+
+def stack_overview():
+    """The README stack diagram (figures/diagrams/stack-overview.mmd), same boxes, edges and labels, animated:
+    the planner and operator create the worker pods, then one request flows through them."""
+    W, H, CYC = 560, 566, 12
+    css = ("\n  .m15 { font-size: 15px; } .m14 { font-size: 14px; }"
+           "\n  .chip { fill: #e8e8e8; }"
+           "\n  .e-blue { stroke: #1f6feb; fill: none; } .e-grey { fill: none; } .e-kv { stroke: #8250df; fill: none; }")
+    defs = ('<defs>' + "".join(
+        f'<marker id="{i}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
+        f'<path d="M0,0 L10,5 L0,10 z" fill="{c}"/></marker>'
+        for i, c in (("hb", "#1f6feb"), ("hg", "#8c959f"), ("hp", "#8250df"))) + '</defs>')
+
+    def node(x, y, w, h, cls, lines):
+        out = [f'<rect class="{cls}" x="{x}" y="{y}" width="{w}" height="{h}" rx="5" stroke-width="1.5"/>']
+        for i, t in enumerate(lines):
+            ty = y + h / 2 + (i - (len(lines) - 1) / 2) * 19 + 5
+            out.append(f'<text class="boxink m15" x="{x + w / 2}" y="{ty:g}" text-anchor="middle">{t}</text>')
+        return "\n".join(out)
+
+    def chip(cx, cy, lines, w):
+        h = 20 * len(lines) + 4
+        out = [f'<rect class="chip" x="{cx - w / 2}" y="{cy - h / 2}" width="{w}" height="{h}"/>']
+        for i, t in enumerate(lines):
+            ty = cy + (i - (len(lines) - 1) / 2) * 20 + 5
+            out.append(f'<text class="boxink m14" x="{cx}" y="{ty:g}" text-anchor="middle">{t}</text>')
+        return "\n".join(out)
+
+    nodes = {  # x, y, w, h, class, lines
+        "PL": (388, 12, 160, 42, "dynamo", ["Dynamo planner"]),
+        "OP": (388, 152, 160, 42, "dynamo", ["Dynamo operator"]),
+        "C": (62, 152, 156, 42, "client", ["Client / AIPerf"]),
+        "F": (8, 232, 266, 60, "dynamo", ["Dynamo frontend", "HTTP, tokenize, KV-aware router"]),
+        "P": (232, 330, 272, 60, "gpu", ["vLLM prefill or aggregated worker", "one GPU or MIG slice"]),
+        "D": (276, 506, 186, 46, "gpu", ["vLLM decode worker"]),
+    }
+    edges = {  # name: (points, stroke class, marker, dash)
+        "c-f": ([(140, 194), (140, 230)], "e-blue", "hb", None),
+        "f-p": ([(182, 292), (182, 312), (328, 312), (328, 328)], "e-blue", "hb", None),
+        "f-d": ([(100, 292), (100, 488), (328, 488), (328, 504)], "e-blue", "hb", None),
+        "p-d": ([(368, 390), (368, 504)], "e-kv", "hp", "3 4"),
+        "pl-op": ([(468, 54), (468, 150)], "line e-grey", "hg", None),
+        "op-p": ([(444, 194), (444, 212), (408, 212), (408, 328)], "line e-grey", "hg", None),
+        "op-d": ([(492, 194), (492, 212), (524, 212), (524, 488), (408, 488), (408, 504)], "line e-grey", "hg", None),
+    }
+    body = [defs]
+    for name, (pts, cls, mk, dash) in edges.items():
+        width = 2.5 if name == "p-d" else (2 if cls == "e-blue" else 1.5)
+        d = f' stroke-dasharray="{dash}"' if dash else ""
+        body.append(f'<path class="{cls}" d="{rounded(pts)}" stroke-width="{width}"{d} marker-end="url(#{mk})"/>')
+    body += [node(*v) for v in nodes.values()]
+
+    # Highlights: the planner sets replica counts, the operator creates both worker pods, then one request runs:
+    # client -> frontend -> prefill leg -> decode leg -> the decode worker pulls the KV cache and generates.
+    highlights = [("PL", "dynamo", 1, 12), ("OP", "dynamo", 12, 22), ("P", "gpu", 22, 30), ("D", "gpu", 22, 30),
+                  ("C", "client", 32, 40), ("F", "dynamo", 40, 50), ("P", "prefill", 52, 64),
+                  ("D", "decode", 80, 96)]
+    for i, (key, cls, a, b) in enumerate(highlights):
+        x, y, w, h = nodes[key][:4]
+        name = f"hl{i}"
+        body.append(f'<rect class="{cls} motion" x="{x}" y="{y}" width="{w}" height="{h}" rx="5" '
+                    f'style="animation: {name} {CYC}s linear infinite; opacity: 0; fill: none; stroke-width: 5px;"/>')
+        css += pulse(name, a, b)
+    dots = [("d-pl", edges["pl-op"][0], 4, 12, "c-blue", 6), ("d-op1", edges["op-p"][0], 13, 22, "c-blue", 6),
+            ("d-op2", edges["op-d"][0], 13, 22, "c-blue", 6), ("d-c", edges["c-f"][0], 33, 40, "c-blue", 7),
+            ("d-fp", edges["f-p"][0], 43, 52, "c-blue", 7), ("d-fd", edges["f-d"][0], 63, 72, "c-blue", 7)]
+    for name, pts, a, b, cls, r in dots:
+        body.append(f'<circle class="{cls} motion" r="{r}" cx="0" cy="0" '
+                    f'style="animation: {name} {CYC}s linear infinite; opacity: 0;"/>')
+        css += path_anim(name, pts, a, b)
+    for i in range(5):  # KV blocks pulled down the purple edge
+        name, s0 = f"kv{i}", 71 + i * 2
+        body.append(f'<rect class="c-purple motion" x="-6" y="-6" width="12" height="12" rx="2" '
+                    f'style="animation: {name} {CYC}s linear infinite; opacity: 0;"/>')
+        css += path_anim(name, [(368, 392), (368, 500)], s0, s0 + 6)
+    # Edge labels last, so moving dots pass behind them as the edges do.
+    body += [chip(468, 100, ["replica counts"], 112),
+             chip(408, 262, ["creates pods from the", "DynamoGraphDeployment"], 190),
+             chip(368, 448, ["KV cache via NIXL / UCX,", "NVLink or TCP"], 186)]
+    return svg(W, H, "\n".join(body), css)
 
 
 if __name__ == "__main__":
     for name, fn in (("anim-request-path", request_path), ("anim-interference", interference),
                      ("anim-kv-transfer", kv_transfer), ("anim-request-journey", request_journey),
-                     ("anim-stack-ownership", stack_ownership)):
+                     ("anim-stack-overview", stack_overview)):
         p = OUT / f"{name}.svg"
         p.write_text(fn(), encoding='utf-8')
         print("wrote", p.relative_to(OUT.parent), f"{p.stat().st_size / 1024:.1f} KB")

@@ -71,9 +71,10 @@ baseline; the linked parts give the conditions.
 
 ## The stack, and who manages what
 
-<img src="figures/anim-stack-ownership.svg" width="100%" alt="Animated table: nine settings, each paired with the one process that reads it. optimization_target in the DGD planner component is read by the Dynamo planner; replicas by the Dynamo operator; --router-prefill-load-scale by the Dynamo frontend router; --disaggregation-mode by the dynamo.vllm wrapper; --max-num-batched-tokens by the vLLM scheduler; unset values by vLLM source code defaults; --kv-transfer-config and UCX environment variables by the NIXL connector, NIXL and UCX; nvidia.com/gpu limits by the KAI scheduler, kubelet and device plugin; the MIG node label by the GPU Operator. Brackets group them into Dynamo control pods (the operator, plus a planner per graph), the frontend pod, the vLLM worker pod and the Kubernetes cluster">
+<img src="figures/anim-stack-overview.svg" width="100%" alt="The stack: the client sends requests to the Dynamo frontend (HTTP, tokenize, KV-aware router), which routes to a vLLM prefill or aggregated worker and a vLLM decode worker; the KV cache moves between workers via NIXL / UCX over NVLink or TCP; the Dynamo planner sets replica counts and the Dynamo operator creates the worker pods from the DynamoGraphDeployment">
 
-> <sub><i>Debug a surprising number by finding the one process that read the setting, not the YAML file it was written in.</i></sub>
+> <sub><i>Every knob belongs to one box: routing to the frontend, engine flags to the workers, pool sizes to the planner, and
+> the KV transport to which GPUs each pod can see.</i></sub>
 
 | Layer | Component | Version |
 |---|---|---|

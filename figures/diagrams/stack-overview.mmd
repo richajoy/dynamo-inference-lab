@@ -1,0 +1,19 @@
+flowchart TB
+    C[Client / AIPerf] --> F[Dynamo frontend<br/>HTTP, tokenize, KV-aware router]
+    F --> P[vLLM prefill or aggregated worker<br/>one GPU or MIG slice]
+    F --> D[vLLM decode worker]
+    P -.->|KV cache via NIXL / UCX, NVLink or TCP| D
+    PL[Dynamo planner] -->|replica counts| OP[Dynamo operator]
+    OP -->|creates pods from the DynamoGraphDeployment| P
+    OP --> D
+    classDef client fill:#eef1f4,stroke:#57606a,color:#1f2328,stroke-width:1.5px
+    classDef dynamo fill:#dbeafe,stroke:#1f6feb,color:#0b1f44,stroke-width:1.5px
+    classDef gpu fill:#e8f5d0,stroke:#4c8c00,color:#1d3300,stroke-width:1.5px
+    classDef kv fill:#efe4ff,stroke:#8250df,color:#2d0f5c,stroke-width:1.5px
+    classDef platform fill:#e6edf3,stroke:#6e7781,color:#1f2328,stroke-width:1.5px
+    classDef obs fill:#fff4d6,stroke:#bf8700,color:#3d2a00,stroke-width:1.5px
+    class C client
+    class F,PL,OP dynamo
+    class P,D gpu
+    linkStyle 3 stroke:#8250df,stroke-width:2.5px
+    linkStyle 0,1,2 stroke:#1f6feb,stroke-width:2px
