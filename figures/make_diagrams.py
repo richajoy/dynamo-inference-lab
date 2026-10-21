@@ -129,8 +129,8 @@ def request_path():
              arrow(190, y2 + 62, 298, y2 + 62), arrow(490, y2 + 56, 598, y2 + 30),
              arrow(750, y2 + 58, 750, y2 + 110, cls="s-purple", width=2.4, dash="6 4"),
              f'<text class="c-purple small bold" x="738" y="{y2 + 74}" text-anchor="end">KV cache via NIXL / UCX</text>',
-             f'<text class="muted small" x="738" y="{y2 + 88}" text-anchor="end">NVLink, or TCP if the pods</text>',
-             f'<text class="muted small" x="738" y="{y2 + 102}" text-anchor="end">cannot see the peer GPU</text>',
+             f'<text class="muted small" x="738" y="{y2 + 88}" text-anchor="end">NVLink within a node (measured),</text>',
+             f'<text class="muted small" x="738" y="{y2 + 102}" text-anchor="end">RoCE or InfiniBand across nodes</text>',
              arrow(598, y2 + 140, 492, y2 + 86), arrow(298, y2 + 84, 192, y2 + 84)]
     # highlights (pulses on worker boxes)
     hl = [("hl-agg-pre", 600, y1, 300, 64, "prefill", 22, 38), ("hl-agg-dec", 600, y1, 300, 64, "decode", 40, 92),
@@ -469,9 +469,9 @@ def request_journey():
           "Knob (shared GPU): --max-num-batched-tokens 512 at 64 users: TPOT 43.7 → 17.6 ms, TTFT p50 0.6 → 4.8 s."],
          "Parts 2 and 6"),
         (3, "KV transfer: adds to TTFT, and posting it stalls running decodes",
-         ["Time, 6,000-token KV cache (846 MiB): 5.4 ms idle NVLink, ~93 ms loaded (~51 ms posting), ~2 s TCP.",
-          "Knob: NVLink, not TCP (both GPUs visible, a diagnostic setup): TTFT p50 16.1 s → 205 ms at 16 users.",
-          "Knob: --block-size 64: loaded transfer ~93 → ~26 ms, but TTFT p50 at 64 users 2.9 → 3.3 s (a partial fix)."],
+         ["Time, 6,000-token KV cache (~845 MiB) over NVLink: 5.4 ms idle, ~93 ms under load.",
+          "Why: under load it is ~13,400 scattered spans, each posted by the CPU in ~3.8 μs: ~51 ms of the ~93.",
+          "Knob: --block-size 64: transfer ~93 → ~26 ms; 64 prompt-heavy users: TPOT 12.7 → 10.2 ms, TTFT p50 2.9 → 3.3 s."],
          "Part 4"),
         (4, "Decode: sets TPOT, one engine step per token",
          ["Time: a step reads the weights and KV cache: 6.85 ms at 1 user, 9.94 ms at 64 (short prompts).",
@@ -509,7 +509,7 @@ def request_journey():
     # still image (reduced motion): the knob at each stop
     still = [(1, "Router: --router-prefill-load-scale 10, hit rate 0.64 → 0.89 (Part 3)"),
              (2, "Prefill: chunk budget 512, one GPU, 64 users: TPOT 43.7 → 17.6 ms, TTFT p50 0.6 → 4.8 s (Part 6)"),
-             (3, "KV transfer: NVLink instead of TCP; --block-size 64, a partial fix (Part 4)"),
+             (3, "KV transfer: --block-size 64, ~93 → ~26 ms per loaded transfer, a partial fix (Part 4)"),
              (4, "Decode: FP8 weights, TPOT -29% at 16 users; prefill/decode split, TPOT 23.8 → 12.7 ms (Parts 4, 6)"),
              (5, "Planner: 1 min 51 s to 2 min 49 s per move (Part 5)")]
     g = ['<g class="still">']
@@ -540,7 +540,7 @@ def stack_overview():
     """The README stack diagram (figures/diagrams/stack-overview.mmd), same boxes, edges and labels, plus the response
     path, animated: the planner and operator create the worker pods, then one request flows through them and its
     output tokens stream back through the frontend to the client."""
-    W, H, CYC = 560, 566, 14
+    W, H, CYC = 560, 494, 14
     css = ("\n  .m15 { font-size: 15px; } .m14 { font-size: 14px; }"
            "\n  .chip { fill: #e8e8e8; }"
            "\n  .e-blue { stroke: #1f6feb; fill: none; } .e-grey { fill: none; } .e-kv { stroke: #8250df; fill: none; }"
@@ -567,22 +567,22 @@ def stack_overview():
 
     nodes = {  # x, y, w, h, class, lines
         "PL": (388, 12, 160, 42, "dynamo", ["Dynamo planner"]),
-        "OP": (388, 152, 160, 42, "dynamo", ["Dynamo operator"]),
-        "C": (62, 152, 156, 42, "client", ["Client / AIPerf"]),
-        "F": (8, 232, 266, 60, "dynamo", ["Dynamo frontend", "HTTP, tokenize, KV-aware router"]),
-        "P": (232, 330, 272, 60, "gpu", ["vLLM prefill or aggregated worker", "GPU pool or MIG slice"]),
-        "D": (276, 506, 186, 46, "gpu", ["vLLM decode worker"]),
+        "OP": (388, 112, 160, 42, "dynamo", ["Dynamo operator"]),
+        "C": (62, 112, 156, 42, "client", ["Client / AIPerf"]),
+        "F": (8, 192, 266, 60, "dynamo", ["Dynamo frontend", "HTTP, tokenize, KV-aware router"]),
+        "P": (232, 290, 272, 60, "gpu", ["vLLM prefill or aggregated worker", "GPU pool or MIG slice"]),
+        "D": (276, 434, 186, 46, "gpu", ["vLLM decode worker"]),
     }
     edges = {  # name: (points, stroke class, marker, dash)
-        "c-f": ([(140, 194), (140, 230)], "e-blue", "hb", None),
-        "f-p": ([(182, 292), (182, 312), (328, 312), (328, 328)], "e-blue", "hb", None),
-        "f-d": ([(100, 292), (100, 488), (328, 488), (328, 504)], "e-blue", "hb", None),
-        "p-d": ([(368, 390), (368, 504)], "e-kv", "hp", "3 4"),
-        "d-f": ([(276, 529), (50, 529), (50, 294)], "e-green", "hgr", None),
-        "f-c": ([(96, 232), (96, 196)], "e-green", "hgr", None),
-        "pl-op": ([(468, 54), (468, 150)], "line e-grey", "hg", None),
-        "op-p": ([(444, 194), (444, 212), (408, 212), (408, 328)], "line e-grey", "hg", None),
-        "op-d": ([(492, 194), (492, 212), (524, 212), (524, 488), (408, 488), (408, 504)], "line e-grey", "hg", None),
+        "c-f": ([(140, 154), (140, 190)], "e-blue", "hb", None),
+        "f-p": ([(182, 252), (182, 272), (328, 272), (328, 288)], "e-blue", "hb", None),
+        "f-d": ([(100, 252), (100, 416), (328, 416), (328, 432)], "e-blue", "hb", None),
+        "p-d": ([(368, 350), (368, 432)], "e-kv", "hp", "3 4"),
+        "d-f": ([(276, 457), (50, 457), (50, 254)], "e-green", "hgr", None),
+        "f-c": ([(96, 192), (96, 156)], "e-green", "hgr", None),
+        "pl-op": ([(468, 54), (468, 110)], "line e-grey", "hg", None),
+        "op-p": ([(444, 154), (444, 172), (408, 172), (408, 288)], "line e-grey", "hg", None),
+        "op-d": ([(492, 154), (492, 172), (524, 172), (524, 416), (408, 416), (408, 432)], "line e-grey", "hg", None),
     }
     body = [defs]
     for name, (pts, cls, mk, dash) in edges.items():
@@ -617,12 +617,12 @@ def stack_overview():
         name, s0 = f"kv{i}", 64 + i * 2
         body.append(f'<rect class="c-purple motion" x="-6" y="-6" width="12" height="12" rx="2" '
                     f'style="animation: {name} {CYC}s linear infinite; opacity: 0;"/>')
-        css += path_anim(name, [(368, 392), (368, 500)], s0, s0 + 6)
+        css += path_anim(name, [(368, 352), (368, 428)], s0, s0 + 6)
     # Edge labels last, so moving dots pass behind them as the edges do.
-    body += [chip(468, 100, ["replica counts"], 112),
-             chip(408, 262, ["creates pods from the", "DynamoGraphDeployment"], 190),
-             chip(368, 448, ["KV cache via NIXL / UCX,", "NVLink or TCP"], 186),
-             chip(163, 529, ["output tokens"], 104)]
+    body += [chip(468, 82, ["replica counts"], 112),
+             chip(408, 222, ["creates pods from the", "DynamoGraphDeployment"], 190),
+             chip(368, 384, ["KV cache via NIXL / UCX over", "NVLink (measured), RoCE or InfiniBand"], 272),
+             chip(163, 457, ["output tokens"], 104)]
     return svg(W, H, "\n".join(body), css)
 
 

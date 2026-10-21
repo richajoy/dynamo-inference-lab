@@ -78,8 +78,8 @@
 <line class="line" x1="490" y1="346" x2="598" y2="320" stroke-width="1.6" marker-end="url(#head)"/>
 <line class="s-purple" x1="750" y1="348" x2="750" y2="400" stroke-width="2.4" stroke-dasharray="6 4" marker-end="url(#head)"/>
 <text class="c-purple small bold" x="738" y="364" text-anchor="end">KV cache via NIXL / UCX</text>
-<text class="muted small" x="738" y="378" text-anchor="end">NVLink, or TCP if the pods</text>
-<text class="muted small" x="738" y="392" text-anchor="end">cannot see the peer GPU</text>
+<text class="muted small" x="738" y="378" text-anchor="end">NVLink within a node (measured),</text>
+<text class="muted small" x="738" y="392" text-anchor="end">RoCE or InfiniBand across nodes</text>
 <line class="line" x1="598" y1="430" x2="492" y2="376" stroke-width="1.6" marker-end="url(#head)"/>
 <line class="line" x1="298" y1="374" x2="192" y2="374" stroke-width="1.6" marker-end="url(#head)"/>
 <rect class="prefill motion" x="600" y="110" width="300" height="64" rx="8" stroke-width="2.4" style="animation: hl-agg-pre 7s linear infinite; opacity: 0; fill: none; stroke-width: 5px;"/>
