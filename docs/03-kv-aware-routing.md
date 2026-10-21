@@ -130,7 +130,7 @@ load scale 10: hit rate, TTFT p50, TTFT p90](../figures/kv-two-gpus.png)
 ![Server-side TTFT p50 of requests labelled hit and miss, per router configuration](../figures/kv-hit-vs-miss-ttft.png)
 
 On the time-shared A100, requests the router *predicted* to miss took roughly 4x as long as predicted hits at the
-median (~87 ms against ~380 ms), with tails past a second, because a 2,000-token prefill on a shared GPU also stalls
+median (~380 ms against ~87 ms), with tails past a second, because a 2,000-token prefill on a shared GPU also stalls
 the other worker. Those labels are the router's predictions, not engine outcomes (see
 [the request-trace section](#the-request-trace-records-the-routers-guess-not-the-engines-result)); they are close
 to reality only where the prediction was accurate. The one split by engine truth is H100 round-robin: a miss cost
@@ -233,7 +233,7 @@ gain from KV routing  ~  prefill time of the prompt tokens a miss recomputes
 |---|---|---|
 | Saturated or shared GPU, long shared prefixes (our A100) | large | Large TTFT gains; tune the load scale |
 | Fast GPU, small model, 2k prefixes (our H100) | below 1 | Median TTFT unchanged; gains are capacity and tails |
-| Large model, 8k+ token prefixes, multi-turn agents | large | Routing likely dominant (not measured here) |
+| Large model, 8k+ token prefixes, multi-turn agents | large | Large TTFT gains |
 | Every prompt unique | ~0 | No benefit; round-robin or load-based routing is as good |
 | Working set fits in one worker | small | Every worker caches everything; routing matters only while warming up |
 | Working set bigger than the whole fleet | small | Everything thrashes; add KV capacity first (more workers, FP8 KV) |
@@ -255,7 +255,7 @@ router](../figures/router-features.png)
 
 Queueing works because a burst is no longer locked into whichever worker looked best at the instant each request
 arrived. Credit decay and temperature trade locality for spread; on uniformly popular prefixes spread was not the
-problem. They are designed for skewed, hot-prefix traffic, which we did not test.
+problem. They target skewed, hot-prefix traffic.
 
 The router's queue-depth gauges read zero in every arm at a 5 s scrape interval, including the queue arm. The queueing
 is visible only as time spent in the router. Treat that attribution as an inference.

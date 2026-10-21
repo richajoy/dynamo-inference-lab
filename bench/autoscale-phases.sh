@@ -25,7 +25,7 @@ load() {  # $1=label $2=isl $3=osl $4=concurrency
 for p in $PHASES; do
   echo "$(date +%H:%M:%S) phase $p start"
   case $p in
-    prefill) load prefill 1500 32 48 ;;   # 1500 not 3000: MIG P/D moves KV over TCP (~420 MB/s), keep the planner signal compute-driven
+    prefill) load prefill 1500 32 48 ;;   # 1500 not 3000: MIG P/D moves KV over TCP (~420 MiB/s), keep the planner signal compute-driven
     decode)  load decode 256 1024 128 ;;
     mixed)   load mixed-p 1500 32 24 & load mixed-d 256 1024 64; wait ;;
   esac

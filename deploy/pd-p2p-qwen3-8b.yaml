@@ -1,5 +1,5 @@
 # DIAGNOSTIC variant, NOT a production pattern: both P/D worker pods see BOTH GPUs.
-# Finding it tests: with one GPU per pod (device plugin isolation) UCX moved KV over tcp/eth0 at ~420 MB/s even with
+# Finding it tests: with one GPU per pod (device plugin isolation) UCX moved KV over tcp/eth0 at ~420 MiB/s even with
 # hostIPC, and cuda_ipc never appeared as a candidate. CUDA IPC needs the reading process to see the peer GPU.
 # Here: no nvidia.com/gpu request (scheduler does not account these GPUs), NVIDIA_VISIBLE_DEVICES=all, and
 # CUDA_VISIBLE_DEVICES pins prefill to GPU 0 and decode to GPU 1; hostIPC + hostPID so IPC handles resolve.

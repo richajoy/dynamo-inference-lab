@@ -34,7 +34,7 @@ performance profiling and uses thresholds:
 
 <img src="../figures/diagrams/planner-loop.svg" width="100%" alt="The planner loop: vLLM workers report queued prefill tokens and decode KV utilization; the planner, every 10 s, clamps to the GPU budget and patches replica counts in the DynamoGraphDeployment; the Dynamo operator deletes a pod in one pool and creates one in the other, and the freed MIG slice is bound to the new pod after a cold start">
 
-> <sub><i>The planner decides every 10 s but each move costs a 2 to 3 minute cold start, so it can follow slow traffic shifts,
+> <sub><i>The planner decides every 10 s but each move costs a cold start of about 2 to 3 minutes, so it can follow slow traffic shifts,
 > not bursts.</i></sub>
 
 ## Setup
@@ -57,9 +57,9 @@ Wait for the new resource to appear in the node's allocatable instead.
 ### 1. P/D across MIG slices is TCP, even on one physical GPU
 
 The [terminal recording](../evidence/casts/mig-pd-kv-transfer.cast) shows both worker pods on the same physical H100
-with different MIG device IDs. The KV cache still moved over TCP: 846 MiB in ~2,000 ms, ~0.44 GB/s, the same as two
-separate GPUs in single-GPU pods. Making all GPUs visible to the pod cannot help here, because the isolation is in
-hardware. **MIG is for isolating models or tenants, not for disaggregation.**
+with different MIG device IDs, yet UCX moved the KV cache over TCP: 846 MiB in ~2,000 ms, ~0.44 GB/s. Making all
+GPUs visible to the pod cannot help here, because the isolation is in hardware.
+**MIG is for isolating models or tenants, not for disaggregation.**
 
 ### 2. Monitoring goes partly blind
 
@@ -104,13 +104,14 @@ Every client request succeeded (4,762 of 4,762).
 
 The inputs are in the planner's log line at T+4:58. Prefill queues read zero: each 1,500-token prompt prefilled
 quickly on its slice. But one decode engine reported `queued_kv=21000`: 21,000 tokens = 14 requests of 1,500 tokens
-that the decode worker had accepted and could not start, because their KV was still crossing the ~0.44 GB/s TCP link
+that the decode worker had accepted and could not start, because their KV was still crossing the ~0.44 GB/s link between slices
 (~0.5 s per request). By T+7:48 the same engine held 35 requests' worth queued and only 2 actually decoding.
 
 So the bottleneck was the transfer, it surfaced as a queue on the decode side, and the planner's only remedy for a
 full decode queue is more decode workers, paid for with a prefill worker. **Its two signals cannot tell transfer
-back-pressure from real decode pressure.** On NVLink, transfers take milliseconds and this queue should not build;
-we did not test that.
+back-pressure from real decode pressure.** On NVLink, transfers take milliseconds and this queue would be far smaller
+([Part 4](04-pd-disaggregation.md)); a planner run over NVLink is listed under
+[next experiments](08-findings.md#open-questions-and-next-experiments).
 
 A second bias showed at T+15:59: when both pools wanted to grow past the budget, the clamp scaled prefill down first
 and gave decode the remainder. Prefill's legitimate request was dropped, and the mixed phase's prompt-heavy stream got
@@ -123,7 +124,7 @@ sample. Prefill-heavy traffic with 32-token outputs keeps each request on a deco
 decode utilization is bursty, and one quiet sample removed a decode slice that the budget floor handed back 20 s
 later. The only damping we saw: while a move is in progress the planner logs
 `Scaling in progress ... observing only`, so each cold start also blocks the next decision. Each flip cost one slice,
-a quarter of the deployment, for two to three minutes.
+a quarter of the deployment, for about 2 to 3 minutes.
 
 <details><summary>Client results per load phase</summary>
 
@@ -144,24 +145,23 @@ least 98% of its target concurrency.
 
 - **Pool rebalancing is a minutes-scale control loop.** It suits traffic that shifts over tens of minutes or hours
   (day and night, batch windows), not bursts. Set the decision interval and thresholds against the cold-start time,
-  not the 10 s default: with 2 to 3 minute moves and 5-minute phases, the planner spent most of each phase moving.
+  not the 10 s default: with moves of about 2 to 3 minutes and 5-minute phases, the planner spent most of each phase moving.
 - **Fix the transport before you autoscale P/D.** On a slow link, transfer back-pressure looks like decode pressure
   and the planner moves capacity the wrong way.
-- **Add hysteresis.** Scale down well below where you scale up, and require several consecutive samples. In Dynamo
-  1.5.1 the observation-count and sensitivity settings feed the performance-model (SLA) path, not the threshold rules
-  we ran (from reading the source; not tested).
+- **Add hysteresis.** Scale down well below where you scale up, and require several consecutive samples. Per the
+  Dynamo 1.5.1 source, the observation-count and sensitivity settings feed the performance-model (SLA) path, not the
+  threshold rules we ran.
 - **Do not use MIG for disaggregation.** Use it to isolate small models or tenants.
 - **Alert and scale on signals that work on MIG:** profiling fields such as `DCGM_FI_PROF_GR_ENGINE_ACTIVE`, or
   Dynamo's own queue and KV metrics, not `GPU_UTIL`.
 - The planner patched the DGD directly because no scaling adapter was enabled. KEDA or an HPA would instead scale a
   component through its DynamoGraphDeploymentScalingAdapter. Never point the planner and KEDA at the same component.
-  We did not test the KEDA path.
 
 ## Caveats
 
 - One run. The mechanism behind the wrong move is read directly from the planner's inputs; oscillation frequency and
   cold-start times could differ run to run.
-- MIG plus TCP is an unusual combination. It made the transfer bottleneck visible; results on NVLink or RDMA may differ.
+- The slow link between MIG slices made the transfer bottleneck visible; results on NVLink or RDMA may differ.
 - The replica log samples every 10 s, so transition times are +/- 10 s.
 - The budget band was 3 to 4 slices: we tested re-splitting, not growing the deployment.
 

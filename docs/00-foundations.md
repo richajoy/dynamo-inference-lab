@@ -216,15 +216,15 @@ prompt that starts with the same tokens (a shared system prompt, a RAG document)
 **Moving it.** If prefill and decode run on different GPUs, the KV cache must travel. A 6,000-token prompt is
 6,000 x 147,456 B = 375 blocks, 843.75 MiB (about 885 MB). A 6,001-token prompt needs one more block: 846 MiB, the
 size in our idle transfer logs. How long that takes depends
-entirely on the path:
+on the path; on the fast one:
 
 | Path | Achieved bandwidth (measured) | Time for one 846 MiB KV cache |
 |---|---|---|
 | CUDA IPC over NVLink, GPU to GPU | ~164 GB/s | ~5 ms |
-| TCP over the Kubernetes pod network | ~0.45 GB/s | ~2,000 ms |
 
-Prefilling that same prompt takes ~150 ms. So over NVLink the transfer is a rounding error, and over TCP it costs
-13x the work it saves. [Part 4](04-pd-disaggregation.md) is about which path you actually get.
+Prefilling that same prompt takes ~150 ms, so over NVLink the transfer is a rounding error. On one node without
+RDMA, the default one-GPU-per-pod spec makes UCX silently fall back to TCP, which makes disaggregation a net loss; see
+[Part 4](04-pd-disaggregation.md).
 
 ## 7. What users feel and what operators pay
 
@@ -299,4 +299,4 @@ also has FP8 tensor cores, which the A100 lacks, so the FP8 experiments ran on H
 | Prefix cache | KV blocks of earlier requests, reusable by prompts that start with the same tokens |
 | Ridge point | Peak FLOPS / peak bandwidth: the intensity where memory-bound turns compute-bound |
 | TTFT / TPOT / ITL | Time to first token / time per output token / inter-token latency (same as TPOT here) |
-| UCX | Communication library NIXL uses; it picks the transport (CUDA IPC, RDMA, TCP) |
+| UCX | Communication library NIXL uses; it picks the transport (CUDA IPC over NVLink, RDMA, or a fallback) |

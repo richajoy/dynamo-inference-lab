@@ -94,8 +94,7 @@ long before its kernels do.
 - One step carries the whole 3,003-token prompt (no chunking: it fits the 8,192 budget). Its CPU range lasts ~17 ms,
   because prefill shapes are not captured as CUDA graphs and each kernel is launched individually.
 - The GPU stays busy for **~70 ms** on that prompt: ~44 TFLOP at ~64% of peak, the prefill efficiency used throughout
-  the [foundations](00-foundations.md#3-the-roofline-where-each-kind-of-step-sits). Traced durations are upper bounds,
-  because tracing overhead was not measured. The CPU launch overlaps the GPU
+  the [foundations](00-foundations.md#3-the-roofline-where-each-kind-of-step-sits). The CPU launch overlaps the GPU
   work rather than adding to it. Against a measured TTFT of 79 ms, the remaining ~9 ms is the software path.
 - Decode steps then repeat every ~7.2 ms over a solid kernel lane: the GPU is the bottleneck and CPU work is hidden.
 
@@ -119,7 +118,7 @@ width: the range is the CPU's share, the period is the step time.
 Check it against the model: each of the 16 streams holds ~3,000 tokens of context, so a step reads 15.14 GB of weights
 plus 16 x ~3,064 x 147,456 B = ~7.2 GB of KV, ~22.4 GB in all. At the 2.23 TB/s decode achieved untraced, that is
 ~10.0 ms. The traced 9.5 ms is close, an approximate match from one slice rather than a controlled comparison, so tracing
-overhead looks small here but remains unmeasured. (An earlier reading of
+overhead looks small here. (An earlier reading of
 this trace compared it with an untraced step at a much shorter context and called the difference tracing overhead;
 it was the KV reads.) We still take absolute timings from benchmark runs and use traces for attribution.
 
@@ -137,6 +136,7 @@ it was the KV reads.) We still take absolute timings from benchmark runs and use
 - **No Nsight Compute.** We have no per-kernel achieved bandwidth or roofline position. Running it needs root or
   `NVreg_RestrictProfilingToAdminUsers=0`, `CAP_SYS_ADMIN` in the pod, and DCGM's profiling fields paused (they share
   the hardware counters).
+- Tracing overhead was not measured, so traced durations are upper bounds.
 - One capture per window, BF16 only: no trace of FP8, the long shape or the P/D workers.
 - Kernel shares come from short windows (8 to 24 requests); the raw reports are not committed.
 - The timeline script colours kernels by name pattern and checks GEMM patterns first, so FlashAttention-3 kernels

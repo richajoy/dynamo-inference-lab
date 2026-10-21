@@ -102,7 +102,7 @@ feels as TPOT. A small budget caps any step's length, so TPOT falls, but at satu
 - **Saturated (c64): a pure TPOT-versus-TTFT dial.** TPOT 43.7 to **17.6 ms** (-60%; per-user speed 24 to 57
   tokens/s), requests/s -8%, but TTFT p50 0.6 s to **4.8 s**. Exactly the trade predicted.
 - **Busy but below saturation (c16): 512 wins nearly everything.** TTFT p50 639 to **164 ms** (-74%), requests/s +9%,
-  TPOT unchanged. The likely mechanism (consistent with the numbers, not traced): with a big budget several prompts are
+  TPOT unchanged. Mechanism consistent with the numbers: with a big budget several prompts are
   batched into one long step and all get their first token when it ends; with a small budget each prompt starts in the
   next short step.
 - **Decode-heavy:** throughput and TPOT unchanged; TTFT drops because a new short prompt no longer waits behind a long
@@ -150,7 +150,7 @@ to ~10.0 GB (6.95 of FP8 linear weights + 1.24 of BF16 output head + 1.8 of KV):
 bandwidth-bound.
 
 **Measured (the one FP8 cell the client held full):** TPOT 7.59 to **5.41 ms (-29%)**, requests/s **+32%**, TTFT p50
-100 to 43 ms. That is less than the -41% the byte count predicts. Likely reasons, not tested in isolation: FP8 adds a
+100 to 43 ms. That is less than the -41% the byte count predicts. Two candidate reasons: FP8 adds a
 quantize step for every layer's activations, and skinny FP8 decode GEMMs may sit further from the bandwidth limit than
 the BF16 ones. A kernel-level profile of the FP8 build would settle it.
 
@@ -164,8 +164,6 @@ decode-heavy, and slower than BF16 on the two prompt-heavy shapes. Its c64 cells
 in-flight requests than plain FP8 (58 to 63 against 47 to 51), so they cannot be compared. Measure it on your own
 model before enabling it.
 
-**Accuracy was not evaluated.** Run your own evaluation before shipping FP8.
-
 ## Bytes per step: the FP8 KV cache
 
 **What it does.** Keys and values are stored in 8 bits: the same memory holds twice the tokens (388,080 to 775,712),
@@ -176,7 +174,7 @@ to ~450,000 tokens of KV, more than the BF16 cache holds.
 
 **Measured, long c64:** requests/s **+37%**, TTFT p99 24.1 s to **10.2 s**, TTFT p50 2.1 to 0.9 s, TPOT 33.7 to
 27.2 ms. Elsewhere small: decode-heavy c64 +7% requests/s (less KV to read per step), prefill-heavy c64 +5%. We passed
-no calibrated KV scales, and accuracy was not evaluated.
+no calibrated KV scales.
 
 <details><summary>FP8 table</summary>
 

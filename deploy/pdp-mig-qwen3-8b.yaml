@@ -4,12 +4,12 @@
 # (vendor/dynamo/components/src/dynamo/planner/core/budget.py proportional_clamp_pair).
 # optimization_target=load (planner_config.py:396): explicit thresholds, no profiling / AIC model needed.
 #   prefill: queued prefill tokens per worker >= 6000 -> up, < 500 -> down
-#   decode : KV utilization >= 30 % -> up, < 10 % -> down   (a 3g.40gb slice holds ~124k tokens of Qwen3-8B KV)
+#   decode : KV utilization >= 30 % -> up, < 10 % -> down   (a 3g.40gb slice holds ~129k tokens of Qwen3-8B KV)
 # Load decisions every 10 s (load_adjustment_interval_seconds); throughput scaling off (needs the AIC/SLA model).
 # P/D disaggregation on MIG (2x H100): each worker gets one nvidia.com/mig-3g.40gb slice
 # (node labelled nvidia.com/mig.config=all-3g.40gb -> 2 slices per H100 = 4 slices). Same engine flags as
-# deploy/pd-qwen3-8b.yaml. Known risk: CUDA IPC is blocked between MIG instances, so NIXL/UCX must
-# fall back to a host-staged path. Replicas start 1P + 1D; scale each pool separately via its DGDSA.
+# deploy/pd-qwen3-8b.yaml. CUDA IPC is blocked between MIG instances, and UCX falls
+# back to TCP across slices (measured, Part 5). Replicas start 1P + 1D; scale each pool separately via its DGDSA.
 apiVersion: nvidia.com/v1beta1
 kind: DynamoGraphDeployment
 metadata:

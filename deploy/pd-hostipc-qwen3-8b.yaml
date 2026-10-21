@@ -1,9 +1,9 @@
 # P/D disaggregation, 1 prefill + 1 decode Qwen3-8B worker, one whole H100 each.
 # Based on vendor/dynamo/examples/backends/vllm/deploy/disagg.yaml (v1.5.1); engine flags identical to
 # deploy/agg-qwen3-8b.yaml so the only change vs deploy/agg2-qwen3-8b.yaml is the topology.
-# KV moves prefill -> decode through vLLM's NixlConnector (NIXL over UCX). Pods are separate, so CUDA IPC between them
-# is NOT guaranteed; check which transport UCX picked (worker logs) before trusting the numbers.
-# THIS variant: hostIPC: true on both workers (shares the host IPC namespace, needed for CUDA IPC across pods).
+# KV moves prefill -> decode through vLLM's NixlConnector (NIXL over UCX). Pods are separate, and UCX falls back to
+# TCP here (measured, Part 4).
+# THIS variant: hostIPC: true on both workers (shares the host IPC namespace): tests whether hostIPC enables cuda_ipc across pods; it does not (Part 4).
 apiVersion: nvidia.com/v1beta1
 kind: DynamoGraphDeployment
 metadata:

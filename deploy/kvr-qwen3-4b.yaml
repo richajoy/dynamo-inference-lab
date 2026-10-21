@@ -42,7 +42,7 @@ spec:
           # router prediction wins a write-once cell, see docs/03-kv-aware-routing.md), input_tokens,
           # ttft_ms, worker. Lets the A/B pair predicted vs actual PER REQUEST instead of comparing aggregates.
           # hostPath (not emptyDir) because bench/router-mode.sh restarts this pod per mode; runs are separated by
-          # timestamp. Dir must exist owned by uid 1000. Exact file naming under the prefix: check after first run.
+          # timestamp. Dir must exist owned by uid 1000.
           env:
           - { name: DYN_REQUEST_TRACE, value: "1" }
           - { name: DYN_REQUEST_TRACE_SINKS, value: "file" }

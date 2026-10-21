@@ -2,8 +2,8 @@
 # Run two single-GPU tuning variants side by side (one per H100) and sweep both at once. Runs ON the node:
 #   SHAPES="prefill-heavy decode-heavy long" CONCURRENCIES="16 64" ./bench/tune-pair.sh agg-mbt512 agg-mbt8k
 # Variants come from deploy/variants/<name>.yaml (deploy/gen-variant.py). Deletes them afterwards.
-# Caveat: two sweeps share one aiperf pod (4 CPU request). NOT safe: the fp8 / fp8-fused and spec-decode pairs kept only
-# ~47-58 of 64 requests in flight (docs/08-findings.md, 'client-limited runs'). Run one sweep per aiperf pod.
+# Caveat: two sweeps share one aiperf pod (4 CPU request). NOT safe: the fp8 and spec-decode pairs kept only
+# ~47-54 of 64 requests in flight (docs/06-engine-tuning.md, 'Caveats'). Run one sweep per aiperf pod.
 set -uo pipefail
 NS=dynamo-system; SHAPES="${SHAPES:-prefill-heavy decode-heavy long}"; CONCURRENCIES="${CONCURRENCIES:-16 64}"
 names=("$@")

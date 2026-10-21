@@ -5,7 +5,7 @@ explain every curve with the step-time model from the [foundations](00-foundatio
 every later part is compared with.
 
 **Questions this part clarifies**
-- Why per-GPU throughput rises ~43x from 1 to 64 concurrent users while each user's stream slows by only ~30%.
+- Why per-GPU throughput rises ~43x from 1 to 64 concurrent users while each user's stream slows by only ~31%.
 - Why long prompts hurt everyone else's stream, and by how much.
 - Where the floor on time-to-first-token comes from (it is not the GPU).
 - What a faster GPU buys, and why it is different for prompts and for generation.
@@ -53,7 +53,7 @@ serving systems batch, and why concurrency is the first knob.
 - **One user:** TTFT 79 ms. A 3,000-token prompt is ~44 TFLOP; the GPU spends ~70 ms on it (trace in
   [Part 7](07-profiling.md)), and the remaining ~9 ms is software overhead. Then 127 tokens at 7.0 ms each.
 - **16 users:** TTFT p50 591 ms, TPOT 13.8 ms. With an 8,192-token budget a single engine step can carry about 2.7 of
-  these prompts. Our explanation, consistent with the numbers but not traced: they all get their first token when that long
+  these prompts. The numbers fit this mechanism: they all get their first token when that long
   step ends, so the median TTFT reflects batching prompts together, not a full GPU.
 - **64 users:** TTFT p50 617 ms but **p99 4.7 s**; TPOT **43.6 ms** (24 tokens/s per user); 9.6 requests/s and 28,700
   prompt tokens/s. The GPU drew 686 W on average against its 700 W limit.

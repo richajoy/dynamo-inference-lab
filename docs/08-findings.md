@@ -16,13 +16,13 @@ we would run next. Each item links to the part with the evidence.
 | Claim | Verdict | Evidence |
 |---|---|---|
 | Decode is memory-bandwidth-bound, so its step time follows bytes read | **Holds.** One fitted constant (66.5% of peak bandwidth) predicts every measured decode step within 3% | [Foundations §4](00-foundations.md#4-a-decode-step-time-model-that-predicts-our-measurements) |
-| Prefill is compute-bound | **Holds.** A 3,000-token prompt keeps the GPU busy ~70 ms, ~64% of peak FLOPS; saturated prefill scaled with the compute ratio from A100 to H100 | [Part 7](07-profiling.md), [Part 2](02-aggregated-serving.md#the-same-experiment-on-an-a100) |
+| Prefill is compute-bound | **Holds.** A 3,000-token prompt keeps the GPU busy ~70 ms, ~64% of peak FLOPS; saturated prefill scaled with the compute ratio from A100 to H100 (chunk budgets differ at c64) | [Part 7](07-profiling.md), [Part 2](02-aggregated-serving.md#the-same-experiment-on-an-a100) |
 | Mixing prefill into decode steps hurts decoders | **Holds, and it is large.** At 64 concurrent prompt-heavy requests, 61% of mean TPOT lies above the median token gap, which we attribute to steps carrying prompt chunks | [Foundations §5](00-foundations.md#5-mixing-prefill-and-decode-in-one-step-interference) |
 | KV-aware routing beats round-robin on shared-prefix traffic | **Holds only after tuning.** Defaults: 0.69 against 0.55 hit rate on A100 (0.64 against 0.54 on H100). With `--router-prefill-load-scale 10`: 0.90 (0.89 on H100) | [Part 3](03-kv-aware-routing.md) |
 | Higher hit rates mean lower TTFT | **Depends on the miss cost.** Large gains where a miss is expensive; none at the median where a miss costs less than the fixed per-request path | [Part 3](03-kv-aware-routing.md#why-hits-stopped-mattering-for-median-ttft-on-the-h100) |
-| Disaggregation removes interference | **Holds over NVLink:** TPOT halved on prompt-heavy load. **Fails on standard pods:** KV moves over TCP and throughput drops 18x | [Part 4](04-pd-disaggregation.md) |
-| Disaggregation beats aggregation on the same GPUs | **Not with two GPUs.** A fixed 1:1 split saturates whichever pool the traffic leans on; two aggregated workers won throughput on every shape | [Part 4](04-pd-disaggregation.md#3-pd-against-two-aggregated-workers-on-the-same-two-gpus) |
-| The planner moves GPUs between pools as traffic shifts | **Yes, by deleting and cold-starting pods, 2 to 3 minutes per move,** and it can move capacity the wrong way when the KV transfer is slow | [Part 5](05-autoscaling-and-mig.md) |
+| Disaggregation removes interference | **Holds over NVLink:** TPOT halved on prompt-heavy load at 64 concurrent requests. **Fails on standard pods:** one GPU per pod makes UCX fall back to TCP, and throughput drops up to 18x (prompt-heavy, 64 users) | [Part 4](04-pd-disaggregation.md) |
+| Disaggregation beats aggregation on the same GPUs | **Not with two GPUs.** A fixed 1:1 split saturates whichever pool the traffic leans on; two aggregated workers won throughput on every shape at c64 | [Part 4](04-pd-disaggregation.md#3-pd-against-two-aggregated-workers-on-the-same-two-gpus) |
+| The planner moves GPUs between pools as traffic shifts | **Yes, by deleting and cold-starting pods, about 2 to 3 minutes per move,** and it can move capacity the wrong way when the KV transfer is slow | [Part 5](05-autoscaling-and-mig.md) |
 | Engine settings can substitute for hardware | **Partly.** One tuned H100 matched the throughput of a 1:1 prefill/decode pair on two | [Part 6](06-engine-tuning.md) |
 
 ## Findings
@@ -36,13 +36,12 @@ we would run next. Each item links to the part with the evidence.
    batch size makes decode compute-bound. ([Foundations](00-foundations.md))
 2. **Interference hides in the mean.** Prompt-heavy traffic at c64 had a 17 ms median token gap (the decode-only step)
    and a ~200 ms 90th percentile, close to the ~190 ms predicted for a step carrying a full prompt chunk. We read it as
-   compute contention; tensor-core and DRAM activity during those steps were not measured. Mean TPOT (43.6 ms)
-   blends the two; the gap distribution separates them. ([Foundations §5](00-foundations.md#5-mixing-prefill-and-decode-in-one-step-interference))
+   compute contention. Mean TPOT (43.6 ms) blends the two; the gap distribution separates them. ([Foundations §5](00-foundations.md#5-mixing-prefill-and-decode-in-one-step-interference))
 3. **The chunk budget moves waiting, it does not remove it.** At saturation, 512 cut TPOT 60% and raised median TTFT
-   7.7x. Below saturation, 512 won on both. ([Part 6](06-engine-tuning.md#tokens-per-step-the-chunk-budget))
+   7.7x. Below saturation, 512 cut TTFT p50 74% and raised requests/s 9%, with TPOT unchanged. ([Part 6](06-engine-tuning.md#tokens-per-step-the-chunk-budget))
 4. **FP8 KV pays where capacity binds; FP8 weights pay where bandwidth binds.** Long-context c64: FP8 KV +37%
-   requests/s. Decode-heavy c16: FP8 weights -29% TPOT, less than the -41% the byte count predicts (likely activation
-   quantization overhead; not isolated). ([Part 6](06-engine-tuning.md))
+   requests/s. Decode-heavy c16: FP8 weights -29% TPOT, less than the -41% the byte count predicts (two candidates:
+   the activation quantize step and skinny FP8 decode GEMMs). ([Part 6](06-engine-tuning.md))
 5. **Speculative decoding's gain shrinks as the batch grows,** as the roofline predicts: n-gram gave 2.1x TPOT at one
    user and 1.7x at 64, on synthetic text that flatters acceptance. ([Part 6](06-engine-tuning.md#tokens-emitted-per-step-speculative-decoding))
 
@@ -59,10 +58,8 @@ we would run next. Each item links to the part with the evidence.
 
 ### Disaggregation and autoscaling
 
-10. **Single-node disaggregation on standard Kubernetes pods silently moves KV over TCP.** One GPU per pod hides the
-    peer GPU from CUDA, so UCX cannot use CUDA IPC and falls back to the pod network: ~0.45 GB/s against ~164 GB/s over
-    NVLink, 18x lower serving throughput than not disaggregating, and no warning anywhere. `hostIPC` does not help;
-    MIG slices of one GPU behave the same. ([Part 4](04-pd-disaggregation.md#1-the-standard-kubernetes-pod-spec-moves-kv-over-tcp))
+10. **Single-node disaggregation on standard Kubernetes pods silently moves KV over TCP:** one GPU per pod hides the
+    peer GPU from CUDA, so UCX falls back with no warning. ([Part 4](04-pd-disaggregation.md#1-check-the-transport-first-the-default-pod-spec-falls-back-to-tcp))
 11. **Once the link is fast, descriptor posting limits KV transfers.** Under load the free-block list fragments and a
     6,000-token transfer becomes 13,500 memory spans of 64 KiB; posting them took 55% of each transfer and cut
     bandwidth to ~9.6 GB/s. The mechanism is reported upstream for an MLA model (vLLM issue #55434); we measured it on a
@@ -72,7 +69,7 @@ we would run next. Each item links to the part with the evidence.
     stalled at 100% KV, failed its health check and was restarted (seen once). ([Part 4](04-pd-disaggregation.md#4-a-decode-worker-given-more-kv-than-it-holds))
 13. **The planner cannot tell transfer back-pressure from decode load.** Over a slow link, requests waiting for their
     KV appear as queued decode tokens, and the planner moved a slice from prefill to decode during prompt-heavy load.
-    Moves take 2 to 3 minutes and single quiet samples caused flapping. ([Part 5](05-autoscaling-and-mig.md))
+    Moves take about 2 to 3 minutes and single quiet samples caused flapping. ([Part 5](05-autoscaling-and-mig.md))
 
 ### Operations and measurement
 
@@ -98,8 +95,8 @@ is open until re-run with its own client. This is the correction we would most w
 benchmark client, not the engine, was the bottleneck, and nothing flagged it until we checked.
 
 **2. "FP8 fusion passes are slower on every shape." Weakened.** The fused and plain FP8 runs shared a client and ran at
-different effective concurrency at c64 (~58 against ~51 requests in flight), and a bigger batch raises TPOT by itself.
-Only the c16 cells compare like with like (+7% TPOT for the fused build, one run).
+different effective concurrency at c64 (58 to 63 against 47 to 51 requests in flight), and a bigger batch raises TPOT by itself.
+Only the decode-heavy c16 cell compares like with like (+7% TPOT for the fused build, one run).
 
 **3. "The chunk budget makes no difference on the H100 (2,048 against 8,192)." Wrong budget.** The baseline was never
 2,048: vLLM defaulted to 8,192 on the H100, so that comparison was a run against its own repeat. The A100 versus H100
@@ -119,8 +116,8 @@ intervals it was 20.6 ms with 38% posting, but those intervals mix half-size and
 with block 16 (fully fragmented 6,000-token transfers), block 64 took ~26 ms against ~93 ms, with ~46% posting.
 
 **7. Units.** vLLM's transfer log says "MB" and "MB/s" but divides by 2^20, so they are MiB. The 846 "MB" per
-transfer is 846 MiB (887 MB), and it is 376 whole blocks, not 6,001 tokens x 147,456 bytes. The NVLink rate is ~164 GB/s
-and TCP ~0.45 GB/s in decimal units.
+transfer is 846 MiB (887 MB), and it is 376 whole blocks, not 6,001 tokens x 147,456 bytes. The NVLink rate of ~164 GB/s
+is in decimal units.
 
 **8. "The tuned H100 delivers 4.2x the A100."** That compared the H100 at 128 concurrent requests with the A100 at 64.
 At equal concurrency it is 2.9x (about 2.1x from hardware and 1.4x from tuning).
@@ -155,9 +152,9 @@ unmeasured.
 1. **Check that the load generator held the concurrency you asked for.** Requests/s x mean latency / concurrency
    should be ~1. Below ~0.9 the client is the bottleneck.
 2. **Count errors in every table.** A failed request finishes fast and can make a run look better.
-3. **Verify the data path, not only the configuration.** "KV transfer enabled" said nothing about 0.45 versus 164 GB/s.
+3. **Verify the data path, not only the configuration.** "KV transfer enabled" said nothing about which transport UCX picked.
 4. **Read the engine's startup log for every run.** Defaults depend on the hardware.
-5. **Look at distributions, not means.** Mean TPOT hid that 90% of token gaps were fine and 10% were 12x longer.
+5. **Look at distributions, not means.** Mean TPOT hid that half the token gaps were 17 ms or less, but at least one in ten was ~200 ms.
 6. **Pin anything that sets capacity** (here, KV cache size) when comparing hardware or routers, or a hit-rate
    difference is really a memory difference.
 7. **Say how many samples sit behind a percentile.** The p99 of 32 requests is the maximum.
