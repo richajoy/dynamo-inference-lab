@@ -557,7 +557,7 @@ def stack_overview():
     """The README stack diagram (figures/diagrams/stack-overview.mmd), same boxes, edges and labels, plus the response
     path, animated: the planner and operator create the worker pods, then one request flows through them and its
     output tokens stream back through the frontend to the client."""
-    W, H, CYC = 560, 494, 14
+    W, H, CYC = 560, 510, 14
     css = ("\n  .m15 { font-size: 15px; } .m14 { font-size: 14px; }"
            "\n  .chip { fill: #e8e8e8; }"
            "\n  .e-blue { stroke: #1f6feb; fill: none; } .e-grey { fill: none; } .e-kv { stroke: #8250df; fill: none; }"
@@ -588,18 +588,18 @@ def stack_overview():
         "C": (62, 112, 156, 42, "client", ["Client / AIPerf"]),
         "F": (8, 192, 266, 60, "dynamo", ["Dynamo frontend", "HTTP, tokenize, KV-aware router"]),
         "P": (232, 290, 272, 60, "gpu", ["vLLM prefill or aggregated worker", "GPU pool or MIG slice"]),
-        "D": (276, 434, 186, 46, "gpu", ["vLLM decode worker"]),
+        "D": (276, 450, 186, 46, "gpu", ["vLLM decode worker"]),
     }
     edges = {  # name: (points, stroke class, marker, dash)
         "c-f": ([(140, 154), (140, 190)], "e-blue", "hb", None),
         "f-p": ([(182, 252), (182, 272), (328, 272), (328, 288)], "e-blue", "hb", None),
-        "f-d": ([(100, 252), (100, 416), (328, 416), (328, 432)], "e-blue", "hb", None),
-        "p-d": ([(368, 350), (368, 432)], "e-kv", "hp", "3 4"),
-        "d-f": ([(276, 457), (50, 457), (50, 254)], "e-green", "hgr", None),
+        "f-d": ([(100, 252), (100, 432), (328, 432), (328, 448)], "e-blue", "hb", None),
+        "p-d": ([(368, 350), (368, 448)], "e-kv", "hp", "3 4"),
+        "d-f": ([(276, 473), (50, 473), (50, 254)], "e-green", "hgr", None),
         "f-c": ([(96, 192), (96, 156)], "e-green", "hgr", None),
         "pl-op": ([(468, 54), (468, 110)], "line e-grey", "hg", None),
         "op-p": ([(444, 154), (444, 172), (408, 172), (408, 288)], "line e-grey", "hg", None),
-        "op-d": ([(492, 154), (492, 172), (524, 172), (524, 416), (408, 416), (408, 432)], "line e-grey", "hg", None),
+        "op-d": ([(492, 154), (492, 172), (524, 172), (524, 432), (408, 432), (408, 448)], "line e-grey", "hg", None),
     }
     body = [defs]
     for name, (pts, cls, mk, dash) in edges.items():
@@ -634,12 +634,12 @@ def stack_overview():
         name, s0 = f"kv{i}", 64 + i * 2
         body.append(f'<rect class="c-purple motion" x="-6" y="-6" width="12" height="12" rx="2" '
                     f'style="animation: {name} {CYC}s linear infinite; opacity: 0;"/>')
-        css += path_anim(name, [(368, 352), (368, 428)], s0, s0 + 6)
-    # Edge labels last, so moving dots pass behind them as the edges do.
+        css += path_anim(name, [(368, 352), (368, 444)], s0, s0 + 6)
+    # Edge labels last, so moving dots pass behind them as the edges do; the KV label sits beside its line.
     body += [chip(468, 82, ["replica counts"], 112),
              chip(408, 222, ["creates pods from the", "DynamoGraphDeployment"], 190),
-             chip(368, 384, ["KV cache via NIXL / UCX over", "NVLink (measured), RoCE or InfiniBand"], 272),
-             chip(163, 457, ["output tokens"], 104)]
+             chip(262, 391, ["KV cache via NIXL / UCX", "over NVLink (measured),", "RoCE or InfiniBand"], 176),
+             chip(163, 473, ["output tokens"], 104)]
     return svg(W, H, "\n".join(body), css)
 
 
